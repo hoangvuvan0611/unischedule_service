@@ -23,4 +23,4 @@ COPY --from=builder /app/target/UniScheduleService-0.0.1-SNAPSHOT.jar app.jar
 EXPOSE 8801
 
 # Chạy app với profile dev
-ENTRYPOINT ["java", "-jar", "/app/app.jar", "--spring.profiles.active=dev"]
+ENTRYPOINT ["java", "-jar", "/app/app.jar", "--spring.profiles.active=prod"]

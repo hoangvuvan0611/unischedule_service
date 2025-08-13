@@ -41,33 +41,44 @@ public class LoginServiceImpl implements LoginService {
     public Map<String, String> loginAndGetSessionStorage(String username, String password) {
         WebDriver driver = null;
         Map<String, String> sessionData = new HashMap<>();
-        WebDriverManager.chromedriver().setup();
 
         try {
-            // Cấu hình Chrome options - giữ nguyên phần này
+            // Cấu hình ChromeOptions cho Alpine Linux với Chromium
             ChromeOptions options = new ChromeOptions();
+
+            // Thiết lập binary path cho Chromium trên Alpine
+            String chromeBinary = System.getenv("CHROME_BIN");
+            if (chromeBinary == null || chromeBinary.isEmpty()) {
+                chromeBinary = "/usr/bin/chromium-browser";
+            }
+            options.setBinary(chromeBinary);
+
+            // Thiết lập ChromeDriver path
+            String chromeDriverPath = System.getProperty("webdriver.chrome.driver");
+            if (chromeDriverPath == null || chromeDriverPath.isEmpty()) {
+                System.setProperty("webdriver.chrome.driver", "/usr/bin/chromedriver");
+            }
+
+            // Chrome arguments cho Docker/Alpine
             options.addArguments(
                     "--headless=new",
                     "--no-sandbox",
                     "--disable-dev-shm-usage",
                     "--disable-gpu",
-                    "--disable-images",
-                    "--disable-css",
-                    "--disable-javascript", // Có thể bỏ dòng này nếu trang cần JS
-                    "--disable-plugins",
-                    "--disable-extensions",
-                    "--disable-logging",
+                    "--disable-software-rasterizer",
                     "--disable-background-timer-throttling",
-                    "--aggressive-cache-discard",
-                    "--memory-pressure-off",
-                    "--disable-background-networking",
-                    "--disable-sync",
-                    "--disable-translate",
-                    "--hide-scrollbars",
-                    "--mute-audio",
-                    "--no-first-run",
-                    "--disable-default-apps",
-                    "--disable-popup-blocking"
+                    "--disable-backgrounding-occluded-windows",
+                    "--disable-renderer-backgrounding",
+                    "--disable-features=TranslateUI",
+                    "--disable-extensions",
+                    "--disable-plugins",
+                    "--disable-logging",
+                    "--disable-web-security",
+                    "--disable-features=VizDisplayCompositor",
+                    "--window-size=1920,1080",
+                    "--remote-debugging-port=9222",
+                    "--single-process", // Quan trọng cho Alpine
+                    "--no-zygote"       // Quan trọng cho Alpine
             );
 
             Map<String, Object> prefs = new HashMap<>();

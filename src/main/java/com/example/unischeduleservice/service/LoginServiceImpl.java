@@ -69,7 +69,7 @@ public class LoginServiceImpl implements LoginService {
                     "--disable-popup-blocking"
             );
 
-            options.setBinary("/usr/bin/chromium-browser");
+            options.setBinary("/usr/bin/chromium");
 
             Map<String, Object> prefs = new HashMap<>();
             prefs.put("profile.default_content_setting_values.notifications", 2);

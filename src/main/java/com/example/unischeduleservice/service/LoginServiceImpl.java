@@ -41,6 +41,7 @@ public class LoginServiceImpl implements LoginService {
     public Map<String, String> loginAndGetSessionStorage(String username, String password) {
         WebDriver driver = null;
         Map<String, String> sessionData = new HashMap<>();
+        WebDriverManager.chromedriver().setup();
 
         try {
             // Cấu hình Chrome options - giữ nguyên phần này

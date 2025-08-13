@@ -2,10 +2,8 @@ package com.example.unischeduleservice.controller;
 
 import com.example.unischeduleservice.dto.LoginRequest;
 import com.example.unischeduleservice.service.LoginService;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,7 +19,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public String loginSession(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> loginSession(@RequestBody LoginRequest loginRequest) {
         Map<String, Object> response = new HashMap<>();
 
         try {
@@ -41,6 +39,15 @@ public class AuthController {
             response.put("success", false);
             response.put("message", "Lỗi: " + e.getMessage());
         }
-        return null;
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/session")
+    public ResponseEntity<String> getSessionValue(
+            @RequestParam String username,
+            @RequestParam String password) {
+
+        String value = loginService.getSpecificSessionValue(username, password, "CURRENT_USER");
+        return ResponseEntity.ok(value);
     }
 }

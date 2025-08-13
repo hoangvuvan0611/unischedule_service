@@ -17,7 +17,7 @@ FROM amazoncorretto:21-alpine
 WORKDIR /app
 
 # Copy jar từ stage build
-COPY --from=builder /app/target/UniScheduleService-0.0.1-SNAPSHOT.jar app.jar
+COPY --from=builder /app/target/*-SNAPSHOT.jar app.jar
 
 # Mở port (giúp người khác đọc config dễ hơn)
 EXPOSE 8801

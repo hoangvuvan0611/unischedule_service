@@ -46,7 +46,7 @@ public class LoginServiceImpl implements LoginService {
             // Cấu hình Chrome options - giữ nguyên phần này
             ChromeOptions options = new ChromeOptions();
             options.addArguments(
-                    "--headless=new",
+                    "--headless",
                     "--no-sandbox",
                     "--disable-dev-shm-usage",
                     "--disable-gpu",

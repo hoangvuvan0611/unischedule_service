@@ -1,10 +1,9 @@
 #!/bin/bash
 
 APP_NAME="UniScheduleService"
-IMAGE_NAME="UniScheduleService-image"
+IMAGE_NAME="unischeduleservice-image"
 PORT=8801
 NETWORK_NAME="agri-network"
-FLASK_CONTAINER="flask-recommender"
 
 echo "🧹 Xóa container cũ nếu có..."
 docker rm -f $APP_NAME 2>/dev/null
@@ -19,5 +18,10 @@ echo "🐳 Build Docker image..."
 docker build -t $IMAGE_NAME .
 
 echo "🚀 Chạy lại container..."
+docker run -d \
+  --name $APP_NAME \
+  --network $NETWORK_NAME \
+  -p $PORT:8801 \
+  $IMAGE_NAME
 
 echo "✅ Deploy hoàn tất! App đang chạy tại http://localhost:$PORT"

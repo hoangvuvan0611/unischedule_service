@@ -13,7 +13,7 @@ echo "🧼 Xóa image cũ nếu có..."
 docker rmi $IMAGE_NAME 2>/dev/null || true
 
 echo "⬇️ Pull code mới từ Git..."
-git pull origin main || git pull origin master
+git pull origin main
 
 echo "🐳 Build Docker image..."
 docker build --no-cache -t $IMAGE_NAME .

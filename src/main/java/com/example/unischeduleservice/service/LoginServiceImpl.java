@@ -10,6 +10,8 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -20,12 +22,14 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class LoginServiceImpl implements LoginService {
 
+    private static final Logger logger = LoggerFactory.getLogger(LoginServiceImpl.class);
+
     // Khởi tạo WebDriverManager một lần
     static {
         try {
             WebDriverManager.chromedriver().setup();
         } catch (Exception e) {
-            System.err.println("Error setting up ChromeDriver: " + e.getMessage());
+            logger.error("Error setting up ChromeDriver: " + e.getMessage());
         }
     }
 
@@ -35,238 +39,143 @@ public class LoginServiceImpl implements LoginService {
         Map<String, String> sessionData = new HashMap<>();
 
         try {
-            // Cấu hình Chrome options
+            // Cấu hình Chrome options - giữ nguyên phần này
             ChromeOptions options = new ChromeOptions();
-            options.addArguments("--headless=new"); // Sử dụng headless mode mới
-            options.addArguments("--no-sandbox");
-            options.addArguments("--disable-dev-shm-usage");
-            options.addArguments("--disable-gpu");
-            options.addArguments("--window-size=1920,1080");
-            options.addArguments("--disable-blink-features=AutomationControlled");
-            options.addArguments("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+            options.addArguments(
+                    "--headless=new",
+                    "--no-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--disable-gpu",
+                    "--disable-images",
+                    "--disable-css",
+                    "--disable-javascript", // Có thể bỏ dòng này nếu trang cần JS
+                    "--disable-plugins",
+                    "--disable-extensions",
+                    "--disable-logging",
+                    "--disable-background-timer-throttling",
+                    "--aggressive-cache-discard",
+                    "--memory-pressure-off",
+                    "--disable-background-networking",
+                    "--disable-sync",
+                    "--disable-translate",
+                    "--hide-scrollbars",
+                    "--mute-audio",
+                    "--no-first-run",
+                    "--disable-default-apps",
+                    "--disable-popup-blocking"
+            );
 
-            // Tạo driver
+            Map<String, Object> prefs = new HashMap<>();
+            prefs.put("profile.default_content_setting_values.notifications", 2);
+            prefs.put("profile.managed_default_content_settings.images", 2);
+            prefs.put("profile.default_content_settings.popups", 0);
+            options.setExperimentalOption("prefs", prefs);
+
             driver = new ChromeDriver(options);
-            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
+            driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(8)); // Giảm timeout
+            driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(1));   // Giảm wait
+
+            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(8));
             JavascriptExecutor js = (JavascriptExecutor) driver;
 
-            System.out.println("Navigating to VNUA website...");
+            logger.info("Navigating to VNUA website...");
             driver.get("https://daotao.vnua.edu.vn/#/home");
 
-            // Đợi trang load hoàn toàn
-            wait.until(webDriver -> js.executeScript("return document.readyState").equals("complete"));
+            // Chỉ đợi DOM ready thay vì complete
+            wait.until(webDriver -> !js.executeScript("return document.readyState").equals("loading"));
 
-            // Đợi Angular load xong
-            Thread.sleep(3000);
+            logger.info("Waiting for login form...");
 
-            // Đợi form xuất hiện và có thể tương tác
-            System.out.println("Waiting for login form...");
-
-            WebElement usernameField = null;
-            String[] usernameSelectors = {
+            // Tìm và điền username
+            WebElement usernameField = findElementWithSelectors(driver, wait, js, new String[]{
                     "input[name='username']",
                     "input[formcontrolname='username']",
                     "input[type='text']",
                     ".form-control[name='username']",
                     ".form-control[formcontrolname='username']"
-            };
-
-            // Thử nhiều lần để tìm element có thể tương tác
-            for (int attempt = 0; attempt < 5; attempt++) {
-                System.out.println("Attempt " + (attempt + 1) + " to find username field...");
-
-                for (String selector : usernameSelectors) {
-                    try {
-                        // Đợi element xuất hiện
-                        wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)));
-
-                        // Đợi element có thể tương tác
-                        wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(selector)));
-
-                        usernameField = driver.findElement(By.cssSelector(selector));
-
-                        if (usernameField.isDisplayed() && usernameField.isEnabled()) {
-                            // Scroll đến element
-                            js.executeScript("arguments[0].scrollIntoView(true);", usernameField);
-                            Thread.sleep(500);
-
-                            // Kiểm tra lại sau khi scroll
-                            if (usernameField.isDisplayed() && usernameField.isEnabled()) {
-                                System.out.println("Found username field with selector: " + selector);
-                                break;
-                            }
-                        }
-                    } catch (Exception e) {
-                        System.out.println("Selector failed: " + selector + " - " + e.getMessage());
-                        continue;
-                    }
-                }
-
-                if (usernameField != null && usernameField.isDisplayed() && usernameField.isEnabled()) {
-                    break;
-                }
-
-                Thread.sleep(2000); // Đợi trước khi thử lại
-            }
+            }, "username");
 
             if (usernameField == null) {
-                throw new RuntimeException("Cannot find username field after multiple attempts");
+                throw new RuntimeException("Cannot find username field");
             }
 
-            System.out.println("Entering username...");
-            try {
-                // Sử dụng JavaScript để clear và set value
-                js.executeScript("arguments[0].value = '';", usernameField);
-                js.executeScript("arguments[0].value = arguments[1];", usernameField, username);
+            logger.info("Entering username...");
+            fillField(js, usernameField, username);
 
-                // Trigger các event Angular cần thiết
-                js.executeScript("arguments[0].dispatchEvent(new Event('input', { bubbles: true }));", usernameField);
-                js.executeScript("arguments[0].dispatchEvent(new Event('change', { bubbles: true }));", usernameField);
-            } catch (Exception e) {
-                // Fallback: dùng sendKeys
-                usernameField.clear();
-                usernameField.sendKeys(username);
-            }
-
-            // Tìm password field với logic tương tự
-            WebElement passwordField = null;
-            String[] passwordSelectors = {
+            // Tìm và điền password
+            WebElement passwordField = findElementWithSelectors(driver, wait, js, new String[]{
                     "input[name='password']",
                     "input[formcontrolname='password']",
                     "input[type='password']",
                     ".form-control[name='password']",
                     ".form-control[formcontrolname='password']"
-            };
-
-            for (int attempt = 0; attempt < 5; attempt++) {
-                System.out.println("Attempt " + (attempt + 1) + " to find password field...");
-
-                for (String selector : passwordSelectors) {
-                    try {
-                        wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)));
-                        wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(selector)));
-
-                        passwordField = driver.findElement(By.cssSelector(selector));
-
-                        if (passwordField.isDisplayed() && passwordField.isEnabled()) {
-                            js.executeScript("arguments[0].scrollIntoView(true);", passwordField);
-                            Thread.sleep(500);
-
-                            if (passwordField.isDisplayed() && passwordField.isEnabled()) {
-                                System.out.println("Found password field with selector: " + selector);
-                                break;
-                            }
-                        }
-                    } catch (Exception e) {
-                        System.out.println("Password selector failed: " + selector + " - " + e.getMessage());
-                        continue;
-                    }
-                }
-
-                if (passwordField != null && passwordField.isDisplayed() && passwordField.isEnabled()) {
-                    break;
-                }
-
-                Thread.sleep(2000);
-            }
+            }, "password");
 
             if (passwordField == null) {
-                throw new RuntimeException("Cannot find password field after multiple attempts");
+                throw new RuntimeException("Cannot find password field");
             }
 
-            System.out.println("Entering password...");
-            try {
-                js.executeScript("arguments[0].value = '';", passwordField);
-                js.executeScript("arguments[0].value = arguments[1];", passwordField, password);
-                js.executeScript("arguments[0].dispatchEvent(new Event('input', { bubbles: true }));", passwordField);
-                js.executeScript("arguments[0].dispatchEvent(new Event('change', { bubbles: true }));", passwordField);
-            } catch (Exception e) {
-                passwordField.clear();
-                passwordField.sendKeys(password);
-            }
+            logger.info("Entering password...");
+            fillField(js, passwordField, password);
 
-            // Tìm và click nút đăng nhập với logic cải thiện
-            WebElement loginButton = null;
-            String[] loginButtonSelectors = {
-                    "button.btn-primary",
-                    "button[type='submit']",
-                    "input[type='submit']",
-                    "button:contains('Đăng nhập')",
-                    ".btn-primary",
-                    "button.ng-star-inserted"
-            };
-
-            for (int attempt = 0; attempt < 5; attempt++) {
-                System.out.println("Attempt " + (attempt + 1) + " to find login button...");
-
-                for (String selector : loginButtonSelectors) {
-                    try {
-                        if (selector.contains(":contains")) {
-                            // Sử dụng XPath cho text search
-                            loginButton = driver.findElement(By.xpath("//button[contains(text(), 'Đăng nhập')]"));
-                        } else {
-                            wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)));
-                            wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(selector)));
-                            loginButton = driver.findElement(By.cssSelector(selector));
-                        }
-
-                        if (loginButton != null && loginButton.isDisplayed() && loginButton.isEnabled()) {
-                            js.executeScript("arguments[0].scrollIntoView(true);", loginButton);
-                            Thread.sleep(500);
-
-                            if (loginButton.isDisplayed() && loginButton.isEnabled()) {
-                                System.out.println("Found login button with selector: " + selector);
-                                break;
-                            }
-                        }
-                    } catch (Exception e) {
-                        System.out.println("Login button selector failed: " + selector + " - " + e.getMessage());
-                        continue;
-                    }
-                }
-
-                if (loginButton != null && loginButton.isDisplayed() && loginButton.isEnabled()) {
-                    break;
-                }
-
-                Thread.sleep(2000);
-            }
-
+            // Tìm và click nút đăng nhập
+            WebElement loginButton = findLoginButton(driver, wait, js);
             if (loginButton == null) {
-                throw new RuntimeException("Cannot find login button after multiple attempts");
+                throw new RuntimeException("Cannot find login button");
             }
 
-            System.out.println("Clicking login button...");
+            logger.info("Clicking login button...");
             try {
-                // Thử click bằng JavaScript trước
                 js.executeScript("arguments[0].click();", loginButton);
             } catch (Exception e) {
-                // Fallback: click thông thường
                 loginButton.click();
             }
 
-            // Đợi sau khi login
-            Thread.sleep(5000);
-
-            // Kiểm tra login thành công bằng cách check URL hoặc element
-            String currentUrl = driver.getCurrentUrl();
-            System.out.println("Current URL after login: " + currentUrl);
-
-            // Lấy sessionStorage
-            System.out.println("Getting sessionStorage...");
-            String script = """
+            // Thay vì sleep cố định, chờ đợi sessionStorage có dữ liệu cần thiết
+            logger.info("Waiting for session data...");
+            boolean loginSuccess = wait.until(driver1 -> {
                 try {
-                    var sessionStorage = window.sessionStorage;
-                    var result = {};
-                    for (var i = 0; i < sessionStorage.length; i++) {
-                        var key = sessionStorage.key(i);
-                        result[key] = sessionStorage.getItem(key);
+                    String checkScript = """
+                    try {
+                        var currentUser = sessionStorage.getItem('CURRENT_USER');
+                        var currentUserInfo = sessionStorage.getItem('CURRENT_USER_INFO');
+                        return currentUser !== null && currentUserInfo !== null;
+                    } catch(e) {
+                        return false;
                     }
-                    return result;
-                } catch(e) {
-                    return {error: e.message};
+                """;
+
+                    Boolean hasSessionData = (Boolean) js.executeScript(checkScript);
+                    return Boolean.TRUE.equals(hasSessionData);
+                } catch (Exception e) {
+                    return false;
                 }
-            """;
+            });
+
+            if (!loginSuccess) {
+                logger.warn("Login may have failed - session data not found");
+            }
+
+            // Lấy chỉ những key cần thiết từ sessionStorage
+            logger.info("Getting required sessionStorage data...");
+            String script = """
+            try {
+                var result = {};
+                var currentUser = sessionStorage.getItem('CURRENT_USER');
+                var currentUserInfo = sessionStorage.getItem('CURRENT_USER_INFO');
+                
+                if (currentUser !== null) {
+                    result['CURRENT_USER'] = currentUser;
+                }
+                if (currentUserInfo !== null) {
+                    result['CURRENT_USER_INFO'] = currentUserInfo;
+                }
+                
+                return result;
+            } catch(e) {
+                return {error: e.message};
+            }
+        """;
 
             Object sessionStorageResult = js.executeScript(script);
 
@@ -279,22 +188,96 @@ public class LoginServiceImpl implements LoginService {
                 }
             }
 
-            System.out.println("SessionStorage data retrieved: " + sessionData.size() + " items");
+            logger.info("SessionStorage data retrieved: " + sessionData.size() + " items");
 
         } catch (Exception e) {
-            System.err.println("Error during login process: " + e.getMessage());
+            logger.error("Error during login process: " + e.getMessage());
             e.printStackTrace();
         } finally {
             if (driver != null) {
                 try {
                     driver.quit();
                 } catch (Exception e) {
-                    System.err.println("Error closing driver: " + e.getMessage());
+                    logger.error("Error closing driver: " + e.getMessage());
                 }
             }
         }
 
         return sessionData;
+    }
+
+    // Helper method để tìm element với nhiều selector
+    private WebElement findElementWithSelectors(WebDriver driver, WebDriverWait wait, JavascriptExecutor js,
+                                                String[] selectors, String fieldType) {
+        for (String selector : selectors) {
+            try {
+                wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)));
+                WebElement element = driver.findElement(By.cssSelector(selector));
+
+                if (element.isDisplayed() && element.isEnabled()) {
+                    js.executeScript("arguments[0].scrollIntoView(true);", element);
+                    logger.info("Found " + fieldType + " field with selector: " + selector);
+                    return element;
+                }
+            } catch (Exception e) {
+                logger.debug(fieldType + " selector failed: " + selector + " - " + e.getMessage());
+            }
+        }
+        return null;
+    }
+
+    // Helper method để điền field
+    private void fillField(JavascriptExecutor js, WebElement field, String value) {
+        try {
+            js.executeScript("arguments[0].value = '';", field);
+            js.executeScript("arguments[0].value = arguments[1];", field, value);
+            js.executeScript("arguments[0].dispatchEvent(new Event('input', { bubbles: true }));", field);
+            js.executeScript("arguments[0].dispatchEvent(new Event('change', { bubbles: true }));", field);
+        } catch (Exception e) {
+            field.clear();
+            field.sendKeys(value);
+        }
+    }
+
+    // Helper method để tìm login button
+    private WebElement findLoginButton(WebDriver driver, WebDriverWait wait, JavascriptExecutor js) {
+        String[] loginButtonSelectors = {
+                "button.btn-primary",
+                "button[type='submit']",
+                "input[type='submit']",
+                ".btn-primary",
+                "button.ng-star-inserted"
+        };
+
+        // Thử CSS selectors trước
+        for (String selector : loginButtonSelectors) {
+            try {
+                wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)));
+                WebElement element = driver.findElement(By.cssSelector(selector));
+
+                if (element.isDisplayed() && element.isEnabled()) {
+                    js.executeScript("arguments[0].scrollIntoView(true);", element);
+                    logger.info("Found login button with selector: " + selector);
+                    return element;
+                }
+            } catch (Exception e) {
+                logger.debug("Login button selector failed: " + selector + " - " + e.getMessage());
+            }
+        }
+
+        // Thử XPath với text
+        try {
+            WebElement element = driver.findElement(By.xpath("//button[contains(text(), 'Đăng nhập')]"));
+            if (element.isDisplayed() && element.isEnabled()) {
+                js.executeScript("arguments[0].scrollIntoView(true);", element);
+                logger.info("Found login button with XPath");
+                return element;
+            }
+        } catch (Exception e) {
+            logger.debug("XPath login button selector failed: " + e.getMessage());
+        }
+
+        return null;
     }
 
     @Override

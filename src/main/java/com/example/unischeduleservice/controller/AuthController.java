@@ -2,6 +2,7 @@ package com.example.unischeduleservice.controller;
 
 import com.example.unischeduleservice.dto.LoginRequest;
 import com.example.unischeduleservice.service.LoginService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,13 +11,10 @@ import java.util.Map;
 
 @RestController
 @RequestMapping(path = "/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
     private final LoginService loginService;
-
-    public AuthController(LoginService loginService) {
-        this.loginService = loginService;
-    }
 
     @PostMapping("/login")
     public ResponseEntity<?> loginSession(@RequestBody LoginRequest loginRequest) {
@@ -24,7 +22,7 @@ public class AuthController {
 
         try {
             Map<String, String> sessionData = loginService
-                    .loginAndGetSessionStorage("6656485", "Hoanglam06112003");
+                    .loginAndGetSessionStorage(loginRequest.getUsername(), loginRequest.getPassword());
 
             if (!sessionData.isEmpty()) {
                 response.put("success", true);

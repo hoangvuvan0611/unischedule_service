@@ -17,7 +17,7 @@ FROM amazoncorretto:21-alpine
 WORKDIR /app
 
 # Copy đúng file jar (fat jar) mà không cần fix cứng version
-COPY --from=builder /app/target/*-SNAPSHOT.jar app.jar
+COPY --from=builder /app/target/*.jar app.jar
 
 # Mở port
 EXPOSE 8801

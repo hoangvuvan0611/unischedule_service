@@ -1,5 +1,7 @@
 # Stage 1: Build
-FROM maven:3.9.4-amazoncorretto-21 AS builder
+FROM zenika/alpine-chrome:with-node
+# Cài Java vào đây
+RUN apk add --no-cache amazon-corretto-21
 WORKDIR /app
 
 # Copy file cấu hình Maven trước để tận dụng cache dependencies

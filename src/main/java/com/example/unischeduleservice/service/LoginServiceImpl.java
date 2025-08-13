@@ -45,21 +45,14 @@ public class LoginServiceImpl implements LoginService {
         try {
             // Cấu hình Chrome options - giữ nguyên phần này
             ChromeOptions options = new ChromeOptions();
-            options.setBinary("/snap/bin/chromium");
+            options.setBinary("/usr/bin/google-chrome");
             options.addArguments(
                     "--headless",
                     "--no-sandbox",
                     "--disable-dev-shm-usage",
                     "--disable-gpu",
-                    "--disable-images",
-                    "--disable-css",
-                    "--disable-javascript", // Có thể bỏ dòng này nếu trang cần JS
-                    "--disable-plugins",
+                    "--remote-allow-origins=*",
                     "--disable-extensions",
-                    "--disable-logging",
-                    "--disable-background-timer-throttling",
-                    "--aggressive-cache-discard",
-                    "--memory-pressure-off",
                     "--disable-background-networking",
                     "--disable-sync",
                     "--disable-translate",

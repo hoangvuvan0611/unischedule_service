@@ -1,28 +1,40 @@
-# Stage 1: Build
-FROM zenika/alpine-chrome:with-node
-# Cài Java vào đây
-RUN apk add --no-cache amazon-corretto-21
+# =========================
+# Stage 1: Build jar
+# =========================
+FROM maven:3.9.4-amazoncorretto-21 AS builder
 WORKDIR /app
 
-# Copy file cấu hình Maven trước để tận dụng cache dependencies
+# Copy file pom trước để cache dependencies Maven
 COPY pom.xml .
 RUN mvn dependency:go-offline -B
 
-# Copy toàn bộ source code
+# Copy source code
 COPY src ./src
 
-# Build jar (skip test để nhanh hơn)
+# Build jar (skip tests)
 RUN mvn clean package -DskipTests
 
+
+# =========================
 # Stage 2: Runtime
-FROM amazoncorretto:21-alpine
+# =========================
+FROM amazoncorretto:21-alpine AS runtime
 WORKDIR /app
 
-# Copy đúng file jar (fat jar) mà không cần fix cứng version
+# Cài Chromium và thư viện cần thiết (tách thành layer riêng để cache được)
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ttf-freefont \
+    && rm -rf /var/cache/apk/*
+
+# Copy jar từ stage build
 COPY --from=builder /app/target/UniScheduleService-0.0.1-SNAPSHOT.jar app.jar
 
 # Mở port
 EXPOSE 8801
 
-# Chạy app với profile dev
+# Entrypoint
 ENTRYPOINT ["java", "-jar", "/app/app.jar", "--spring.profiles.active=prod"]

@@ -15,7 +15,7 @@ echo "⬇️ Pull code mới từ Git..."
 git pull origin main
 
 echo "🐳 Build Docker image..."
-docker build --no-cache -t $IMAGE_NAME .
+docker build -t $IMAGE_NAME .
 
 echo "🚀 Chạy lại container..."
 docker run -d \

@@ -69,8 +69,6 @@ public class LoginServiceImpl implements LoginService {
                     "--disable-popup-blocking"
             );
 
-            options.setBinary("/snap/bin/chromium");
-
             Map<String, Object> prefs = new HashMap<>();
             prefs.put("profile.default_content_setting_values.notifications", 2);
             prefs.put("profile.managed_default_content_settings.images", 2);

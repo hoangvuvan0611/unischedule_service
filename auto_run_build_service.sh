@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 APP_NAME="UniScheduleService"
 IMAGE_NAME="unischeduleservice-image"
@@ -6,10 +7,10 @@ PORT=8801
 NETWORK_NAME="agri-network"
 
 echo "🧹 Xóa container cũ nếu có..."
-docker rm -f $APP_NAME 2>/dev/null
+docker rm -f $APP_NAME 2>/dev/null || true
 
 echo "🧼 Xóa image cũ nếu có..."
-docker rmi $IMAGE_NAME 2>/dev/null
+docker rmi $IMAGE_NAME 2>/dev/null || true
 
 echo "⬇️ Pull code mới từ Git..."
 git pull origin main || git pull origin master

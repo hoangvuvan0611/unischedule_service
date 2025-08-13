@@ -2,46 +2,25 @@
 FROM maven:3.9.4-amazoncorretto-21 AS builder
 WORKDIR /app
 
+# Copy file cấu hình Maven trước để tận dụng cache dependencies
 COPY pom.xml .
 RUN mvn dependency:go-offline -B
+
+# Copy toàn bộ source code
 COPY src ./src
+
+# Build jar (skip test để nhanh hơn)
 RUN mvn clean package -DskipTests
 
 # Stage 2: Runtime
 FROM amazoncorretto:21-alpine
 WORKDIR /app
 
-# Cài đặt Chromium và dependencies
-RUN apk add --no-cache \
-    bash \
-    curl \
-    unzip \
-    wget \
-    chromium \
-    chromium-chromedriver \
-    nss \
-    freetype \
-    freetype-dev \
-    harfbuzz \
-    ca-certificates \
-    ttf-freefont \
-    && rm -rf /var/cache/apk/*
-
-# Tạo symbolic links
-RUN ln -sf /usr/bin/chromium-browser /usr/bin/google-chrome \
-    && ln -sf /usr/bin/chromedriver /usr/local/bin/chromedriver
-
-# Set environment variables for Chromium
-ENV CHROME_BIN=/usr/bin/chromium-browser
-ENV CHROME_PATH=/usr/bin/chromium-browser
-
-# Copy jar
+# Copy đúng file jar (fat jar) mà không cần fix cứng version
 COPY --from=builder /app/target/UniScheduleService-0.0.1-SNAPSHOT.jar app.jar
 
-# Tạo user non-root cho security
-RUN addgroup -g 1000 spring && adduser -u 1000 -G spring -s /bin/sh -D spring
-RUN chown spring:spring /app/app.jar
-USER spring
-
+# Mở port
 EXPOSE 8801
+
+# Chạy app với profile dev
 ENTRYPOINT ["java", "-jar", "/app/app.jar", "--spring.profiles.active=prod"]

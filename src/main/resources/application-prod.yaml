@@ -1,0 +1,7 @@
+server:
+  port: 8801
+
+
+url:
+  vnua:
+    home: https://daotao.vnua.edu.vn/#/home

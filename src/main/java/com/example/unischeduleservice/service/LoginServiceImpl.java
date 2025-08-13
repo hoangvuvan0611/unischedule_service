@@ -12,6 +12,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -32,6 +33,9 @@ public class LoginServiceImpl implements LoginService {
             logger.error("Error setting up ChromeDriver: " + e.getMessage());
         }
     }
+
+    @Value("${url.vnua.home}")
+    private String urlHome;
 
     @Override
     public Map<String, String> loginAndGetSessionStorage(String username, String password) {
@@ -79,7 +83,7 @@ public class LoginServiceImpl implements LoginService {
             JavascriptExecutor js = (JavascriptExecutor) driver;
 
             logger.info("Navigating to VNUA website...");
-            driver.get("https://daotao.vnua.edu.vn/#/home");
+            driver.get(urlHome);
 
             // Chỉ đợi DOM ready thay vì complete
             wait.until(webDriver -> !js.executeScript("return document.readyState").equals("loading"));

@@ -45,7 +45,8 @@ public class LoginServiceImpl implements LoginService {
         try {
             // Cấu hình Chrome options - giữ nguyên phần này
             ChromeOptions options = new ChromeOptions();
-            options.setBinary("/usr/bin/google-chrome");
+            WebDriverManager.chromedriver().setup();
+
             options.addArguments(
                     "--headless",
                     "--no-sandbox",

@@ -39,6 +39,7 @@ public class LoginServiceImpl implements LoginService {
 
     @Override
     public Map<String, String> loginAndGetSessionStorage(String username, String password) {
+        logger.info("Login with: username={}, password={}", username, password);
         WebDriver driver = null;
         Map<String, String> sessionData = new HashMap<>();
 

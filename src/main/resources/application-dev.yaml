@@ -5,3 +5,11 @@ server:
 url:
   vnua:
     home: https://daotao.vnua.edu.vn/#/home
+
+
+spring:
+  data:
+    mongodb:
+      uri: mongodb://vuvanhoang:vuvanhoang@localhost:27017/accounts?authSource=admin
+  application:
+    name: accounts

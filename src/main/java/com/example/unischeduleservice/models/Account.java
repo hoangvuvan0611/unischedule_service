@@ -1,0 +1,23 @@
+package com.example.unischeduleservice.models;
+
+import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+/**
+ * @author vuvanhoang
+ * @created 21/10/25 08:09
+ * @project unischedule_service
+ */
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Document("accounts")
+public class Account {
+    @Id
+    private String id;
+    private String username;
+    private String password;
+}

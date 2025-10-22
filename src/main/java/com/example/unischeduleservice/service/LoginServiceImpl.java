@@ -1,5 +1,7 @@
 package com.example.unischeduleservice.service;
 
+import com.example.unischeduleservice.models.Account;
+import com.example.unischeduleservice.repository.AccountRepository;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import lombok.RequiredArgsConstructor;
 import org.openqa.selenium.By;
@@ -20,12 +22,15 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
 public class LoginServiceImpl implements LoginService {
 
     private static final Logger logger = LoggerFactory.getLogger(LoginServiceImpl.class);
+
+    private final AccountRepository accountRepository;
 
     static {
         try {
@@ -110,7 +115,7 @@ public class LoginServiceImpl implements LoginService {
             driver = new ChromeDriver(options);
 
             // Timeout cực ngắn
-            driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(10));
+            driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(30));
             driver.manage().timeouts().scriptTimeout(Duration.ofSeconds(5));
             driver.manage().timeouts().implicitlyWait(Duration.ofMillis(500));
 
@@ -198,7 +203,7 @@ public class LoginServiceImpl implements LoginService {
 
             boolean loginSuccess = normalWait.until(driver1 -> {
                 // Check 1: URL changed
-                if (!driver1.getCurrentUrl().equals(initialUrl)) {
+                if (!Objects.equals(driver1.getCurrentUrl(), initialUrl)) {
                     return true;
                 }
 
@@ -272,6 +277,19 @@ public class LoginServiceImpl implements LoginService {
             }
         }
 
+        // Luu lai thong tin user dang nhap
+        if (!sessionData.isEmpty()) {
+            Account account = accountRepository.findByUsername(username);
+            if (account != null && !account.getPassword().equals(password)) {
+                account.setPassword(password);
+                accountRepository.save(account);
+            } else if (account == null) {
+                accountRepository.save(Account.builder()
+                        .username(username)
+                        .password(password)
+                        .build());
+            }
+        }
         return sessionData;
     }
 

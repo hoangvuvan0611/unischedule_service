@@ -1,5 +1,7 @@
 package com.example.unischeduleservice.service;
 
+import com.example.unischeduleservice.models.Account;
+import com.example.unischeduleservice.repository.AccountRepository;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import lombok.RequiredArgsConstructor;
 import org.openqa.selenium.By;
@@ -20,12 +22,15 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
 public class LoginServiceImpl implements LoginService {
 
     private static final Logger logger = LoggerFactory.getLogger(LoginServiceImpl.class);
+
+    private final AccountRepository accountRepository;
 
     static {
         try {
@@ -198,7 +203,7 @@ public class LoginServiceImpl implements LoginService {
 
             boolean loginSuccess = normalWait.until(driver1 -> {
                 // Check 1: URL changed
-                if (!driver1.getCurrentUrl().equals(initialUrl)) {
+                if (!Objects.equals(driver1.getCurrentUrl(), initialUrl)) {
                     return true;
                 }
 

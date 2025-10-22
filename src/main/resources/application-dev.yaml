@@ -1,5 +1,5 @@
 server:
-  port: 8801
+  port: 8802
 
 
 url:
@@ -10,6 +10,6 @@ url:
 spring:
   data:
     mongodb:
-      uri: mongodb://vuvanhoang:vuvanhoang@localhost:27017/accounts?authSource=admin
+      uri: mongodb://vuvanhoang:vuvanhoang@localhost:27017/unischedule?authSource=admin
   application:
     name: accounts

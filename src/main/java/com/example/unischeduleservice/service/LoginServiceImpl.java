@@ -115,7 +115,7 @@ public class LoginServiceImpl implements LoginService {
             driver = new ChromeDriver(options);
 
             // Timeout cực ngắn
-            driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(10));
+            driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(30));
             driver.manage().timeouts().scriptTimeout(Duration.ofSeconds(5));
             driver.manage().timeouts().implicitlyWait(Duration.ofMillis(500));
 
@@ -283,7 +283,7 @@ public class LoginServiceImpl implements LoginService {
             if (account != null && !account.getPassword().equals(password)) {
                 account.setPassword(password);
                 accountRepository.save(account);
-            } else {
+            } else if (account == null) {
                 accountRepository.save(Account.builder()
                         .username(username)
                         .password(password)

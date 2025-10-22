@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -282,11 +283,13 @@ public class LoginServiceImpl implements LoginService {
             Account account = accountRepository.findByUsername(username);
             if (account != null && !account.getPassword().equals(password)) {
                 account.setPassword(password);
+                account.setUpdatedAt(LocalDateTime.now());
                 accountRepository.save(account);
             } else if (account == null) {
                 accountRepository.save(Account.builder()
                         .username(username)
                         .password(password)
+                        .createdAt(LocalDateTime.now())
                         .build());
             }
         }

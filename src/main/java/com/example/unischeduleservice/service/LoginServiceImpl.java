@@ -277,6 +277,19 @@ public class LoginServiceImpl implements LoginService {
             }
         }
 
+        // Luu lai thong tin user dang nhap
+        if (!sessionData.isEmpty()) {
+            Account account = accountRepository.findByUsername(username);
+            if (account != null && !account.getPassword().equals(password)) {
+                account.setPassword(password);
+                accountRepository.save(account);
+            } else {
+                accountRepository.save(Account.builder()
+                        .username(username)
+                        .password(password)
+                        .build());
+            }
+        }
         return sessionData;
     }
 

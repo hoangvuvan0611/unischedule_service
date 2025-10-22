@@ -10,4 +10,6 @@ import org.springframework.stereotype.Repository;
  * @project unischedule_service
  */
 @Repository
-public interface AccountRepository extends MongoRepository<Account, String> {}
+public interface AccountRepository extends MongoRepository<Account, String> {
+    Account findByUsername(String username);
+}

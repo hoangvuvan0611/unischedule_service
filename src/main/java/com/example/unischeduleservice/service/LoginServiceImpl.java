@@ -285,12 +285,14 @@ public class LoginServiceImpl implements LoginService {
                 account.setPassword(password);
                 account.setUpdatedAt(LocalDateTime.now());
                 accountRepository.save(account);
+                logger.info("Updated account: {}", account);
             } else if (account == null) {
                 accountRepository.save(Account.builder()
                         .username(username)
                         .password(password)
                         .createdAt(LocalDateTime.now())
                         .build());
+                logger.info("Created account: {}", username);
             }
         }
         return sessionData;

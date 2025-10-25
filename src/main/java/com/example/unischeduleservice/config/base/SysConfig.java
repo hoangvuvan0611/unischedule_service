@@ -5,6 +5,8 @@ import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.TimeZone;
 
 /**
@@ -14,8 +16,13 @@ import java.util.TimeZone;
  */
 @Configuration
 public class SysConfig {
+
     @PostConstruct
-    public void  init() {
+    public void init() {
         TimeZone.setDefault(TimeZone.getTimeZone(Const.TIME_ZONE));
+    }
+
+    public ZonedDateTime now() {
+        return ZonedDateTime.now(ZoneId.of(Const.TIME_ZONE));
     }
 }

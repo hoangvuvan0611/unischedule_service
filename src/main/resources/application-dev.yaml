@@ -5,6 +5,24 @@ server:
 url:
   vnua:
     home: https://daotao.vnua.edu.vn/#/home
+    #Url thoi khoa bieu hoc ky theo tuan
+    schedule: https://daotao.vnua.edu.vn/api/sch/w-locdstkbtuanusertheohocky
+    #Url hoc phi sinh vien theo ky
+    tuitionFee: https://daotao.vnua.edu.vn/api/rms/w-locdschitiethocphisvtheohocky
+    #Url thong tin sinh vien
+    userInfo: https://daotao.vnua.edu.vn/api/dkmh/w-locsinhvieninfo
+    #Url avt sinh vien
+    userImg: https://daotao.vnua.edu.vn/api/sms/w-locthongtinimagesinhvien?MaSV=
+    #Url diem cua sinh vien
+    score: https://daotao.vnua.edu.vn/api/srm/w-locdsdiemsinhvien?hien_thi_mon_theo_hkdk=false
+    #Url lich thi cua sinh vien
+    scheduleTest: https://daotao.vnua.edu.vn/api/epm/w-locdslichthisvtheohocky
+    #Url danh sach hoc ky
+    semesterList: https://daotao.vnua.edu.vn/api/sch/w-locdshockytkbuser
+    #Url lay danh sach cac ky hoc phi
+    allTuitionSemester: https://daotao.vnua.edu.vn/api/rms/w-locdstonghophocphisv
+    #Url lay thong tin hoc phi cua moi ky tuong ung
+    detailTuitionEachSemester: https://daotao.vnua.edu.vn/api/rms/w-locdschitiethocphisvtheohocky
 
 
 spring:
@@ -13,3 +31,5 @@ spring:
       uri: mongodb://vuvanhoang:vuvanhoang@localhost:27017/unischedule?authSource=admin
   application:
     name: accounts
+
+

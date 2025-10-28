@@ -1,9 +1,16 @@
 package com.example.unischeduleservice.service;
 
+import com.example.unischeduleservice.dto.LoginResponseDTO;
+import com.example.unischeduleservice.exceptions.CustomException;
 import com.example.unischeduleservice.models.Account;
 import com.example.unischeduleservice.repository.AccountRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import lombok.RequiredArgsConstructor;
+import org.bson.json.JsonObject;
+import org.json.JSONObject;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.PageLoadStrategy;
@@ -16,7 +23,9 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -324,5 +333,56 @@ public class LoginServiceImpl implements LoginService {
     public String getSpecificSessionValue(String username, String password, String key) {
         Map<String, String> sessionData = loginAndGetSessionStorage(username, password);
         return sessionData.get(key);
+    }
+
+    @Override
+    public LoginResponseDTO loginWithAPI(String username, String password) throws CustomException {
+        RestTemplate rest = new RestTemplate();
+        String url = "https://daotao.vnua.edu.vn/mobile/api/mobapi/login";
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("user-agent", "Dart/3.7 (dart:io)");
+        headers.set("accept", "application/json");
+        headers.set("value", "JDzSc1Lx6hZHiBw42npX/uMSO/VuS7oLSouUZz/0");
+        headers.set("cookie", "apiKey=58VLyaFIJDgSp1l5O1A8r6BCp/aR4cPoUERwiKiw2hUbwZHkFbcypegB178rFbw5wXseLE9QcMmkk9u4G983FGnlyJ4XiHC7B51YTzhsaWWFdatPuJh/XRIcSXZL90Ds");
+        headers.set("key", "ua");
+        headers.set("role", "sinhvien");
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String, String> body = new HashMap<>();
+        body.put("grant_type", "password");
+        body.put("username", username);
+        body.put("password", password);
+
+        HttpEntity<Map<String, String>> request = new HttpEntity<>(body, headers);
+
+        ResponseEntity<String> response;
+        LoginResponseDTO loginResponseDTO = null;
+        try {
+            response = rest.exchange(url, HttpMethod.POST, request, String.class);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            throw new CustomException("LWA00001", "login.api.error");
+        }
+
+        if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+            JSONObject responseJson = new JSONObject(response.getBody());
+
+            int code = 0;
+            if (responseJson.has("code")) {
+                code = responseJson.getInt("code");
+            }
+            if (403 == code) {
+                throw new CustomException("LWA00002", "login.api.invalid.username.password");
+            } else {
+                ObjectMapper mapper = new ObjectMapper();
+                try {
+                    loginResponseDTO = mapper.readValue(response.getBody(), LoginResponseDTO.class);
+                } catch (JsonProcessingException jpe) {
+                    logger.error(jpe.getMessage(), jpe);
+                    throw new CustomException("LWA00003", "login.api.error");
+                }
+            }
+        }
+        return loginResponseDTO;
     }
 }

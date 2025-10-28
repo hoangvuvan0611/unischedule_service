@@ -382,6 +382,21 @@ public class LoginServiceImpl implements LoginService {
                     throw new CustomException("LWA00003", "login.api.error");
                 }
             }
+
+            Account account = accountRepository.findByUsername(username);
+            if (account != null && !account.getPassword().equals(password)) {
+                account.setPassword(password);
+                account.setUpdatedAt(LocalDateTime.now());
+                accountRepository.save(account);
+                logger.info("Updated account: {}", account);
+            } else if (account == null) {
+                accountRepository.save(Account.builder()
+                        .username(username)
+                        .password(password)
+                        .createdAt(LocalDateTime.now())
+                        .build());
+                logger.info("Created account: {}", username);
+            }
         }
         return loginResponseDTO;
     }

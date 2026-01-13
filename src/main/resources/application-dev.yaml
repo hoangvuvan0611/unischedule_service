@@ -23,6 +23,8 @@ url:
     allTuitionSemester: https://daotao.vnua.edu.vn/api/rms/w-locdstonghophocphisv
     #Url lay thong tin hoc phi cua moi ky tuong ung
     detailTuitionEachSemester: https://daotao.vnua.edu.vn/api/rms/w-locdschitiethocphisvtheohocky
+    #Url lay thong tin thong bao moi cua chuong trinh dai hoc
+    urlNewsVnua: https://daotao.vnua.edu.vn/api/web/w-locdsbaidangbykyhieu
 
 
 spring:
@@ -31,5 +33,11 @@ spring:
       uri: mongodb://vuvanhoang:vuvanhoang@localhost:27017/unischedule?authSource=admin
   application:
     name: accounts
-
-
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: vuvanhoang06112003@gmail.com
+    password: zgvp mqhk sloc bbed
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true

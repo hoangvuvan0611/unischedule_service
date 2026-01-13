@@ -5,6 +5,7 @@ server:
 url:
   vnua:
     home: https://daotao.vnua.edu.vn/#/home
+    urlNewsVnua: https://daotao.vnua.edu.vn/api/web/w-locdsbaidangbykyhieu
 
 spring:
   data:
@@ -12,3 +13,11 @@ spring:
       uri: mongodb://vuvanhoang:vuvanhoang@localhost:27017/unischedule?authSource=admin
   application:
     name: accounts
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: vuvanhoang06112003@gmail.com
+    password: zgvp mqhk sloc bbed
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true

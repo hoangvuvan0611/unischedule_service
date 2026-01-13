@@ -35,6 +35,7 @@ public class VnuaServiceImpl implements VnuaService {
     @Override
     @Scheduled(fixedRate = 3600000, initialDelay = 6000)
     public void sendMailNotiNewsVnua() {
+        log.info("Sending Vnua News Vnua");
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         String payload = """

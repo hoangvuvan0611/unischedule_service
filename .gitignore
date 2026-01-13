@@ -36,3 +36,4 @@ build/
 
 ### Write log 
 /app.log
+application-prod.yml

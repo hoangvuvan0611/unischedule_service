@@ -50,7 +50,7 @@ public class LoginServiceImpl implements LoginService {
         }
     }
 
-    @Value("${url.vnua.home}")
+    @Value("${vnua.url.home}")
     private String urlHome;
 
     @Override

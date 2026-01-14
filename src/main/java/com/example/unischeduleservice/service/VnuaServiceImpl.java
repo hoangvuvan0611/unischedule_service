@@ -1,5 +1,6 @@
 package com.example.unischeduleservice.service;
 
+import com.example.unischeduleservice.dto.ArticleNewsFromAdminVnua;
 import com.example.unischeduleservice.dto.ArticleNewsVnua;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -16,16 +17,22 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class VnuaServiceImpl implements VnuaService {
-    @Value("${url.vnua.urlNewsVnua}")
+
+    @Value("${vnua.url.urlNewsVnua}")
     private String urlNewsVnua;
+    @Value("${vnua.url.urlNewsFromAdminVnua}")
+    private String urlNewsFromAdminVnua;
+    @Value("${vnua.url.urlLogin}")
+    private String urlLogin;
+    @Value("${vnua.usernameVnua}")
+    private String usernameVnua;
+    @Value("${vnua.passwordVnua}")
+    private String passwordVnua;
 
     private static final Logger log = LoggerFactory.getLogger(VnuaServiceImpl.class);
     private RestTemplate restTemplate = new RestTemplate();
@@ -58,7 +65,7 @@ public class VnuaServiceImpl implements VnuaService {
         if (items.isEmpty()) {
             return;
         }
-        List<ArticleNewsVnua> articleNewsVnuaList = items.valueStream().map(item -> ArticleNewsVnua.builder()
+        items.valueStream().map(item -> ArticleNewsVnua.builder()
                     .id(item.get("id").asText())
                     .ky_hieu(item.get("ky_hieu").asText())
                     .so_luong(item.get("so_luong").asLong())
@@ -70,11 +77,86 @@ public class VnuaServiceImpl implements VnuaService {
                     .do_uu_tien(item.get("do_uu_tien").asLong())
                     .is_news(item.get("is_news").asBoolean())
                     .kieu_hien_thi_ngang(item.get("kieu_hien_thi_ngang").asBoolean())
-                    .build()
-        ).filter(item -> item.getIs_news() && item.getNgay_dang_tin().toLocalDate().isAfter(LocalDate.now().minusDays(1))).toList();
+                    .build())
+                .filter(item -> item.getIs_news() && item.getNgay_dang_tin().isAfter(LocalDateTime.now().minusHours(2)))
+                .forEach(articleNewsVnua -> {
+                    mailService.sendMail("hoangvuvan677@gmail.com", "Thông báo đào tạo đại học VNUA", articleNewsVnua.getTieu_de());
+                });
+    }
 
-        articleNewsVnuaList.forEach(articleNewsVnua -> {
-            mailService.sendMail("hoangvuvan677@gmail.com", "Thông báo VNUA", articleNewsVnua.getTieu_de());
-        });
+    @Override
+    @Scheduled(fixedRate = 3600000, initialDelay = 6000)
+    public void sendMailNotiNewsFromAdminVnua() {
+        log.info("Sending Vnua News from Amin");
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(getTokenVnua());
+        String body = """
+                {"filter":{"id":null,"is_noi_dung":true,"is_web":true},"additional":{"paging":{"limit":10,"page":1},"ordering":[{"name":"ngay_gui","order_type":1}]}}
+                """;
+        HttpEntity<String> entity = new HttpEntity<>(body, headers);
+        JsonNode jsonNode;
+        try {
+            String response = restTemplate.postForObject(urlNewsFromAdminVnua, entity, String.class);
+            if (StringUtils.isEmpty(response)) {
+                throw new RuntimeException();
+            }
+            jsonNode = objectMapper.readTree(response);
+        } catch (Exception ex) {
+            log.error(ex.getMessage(), ex);
+            mailService.sendMail("hoangvuvan677@gmail.com", "Lỗi lấy thông tin thông báo VNUA", "Lỗi lấy thông tin thông báo từ quản trị viên: "  + ex.getMessage());
+            return;
+        }
+        JsonNode items = jsonNode.path("data").path("ds_thong_bao");
+        if (items.isEmpty()) {
+            return;
+        }
+        items.valueStream().map(item ->
+                ArticleNewsFromAdminVnua.builder()
+                        .id(item.get("id").asText())
+                        .doi_tuong_search(item.get("doi_tuong_search").asText())
+                        .doi_tuong(item.get("doi_tuong").asText())
+                        .phan_cap_search(item.get("phan_cap_search").asText())
+                        .phan_cap_sinh_vien(item.get("phan_cap_sinh_vien").asText())
+                        .tieu_de(item.get("tieu_de").asText())
+                        .noi_dung(item.get("noi_dung").asText())
+                        .is_phai_xem(item.get("is_phai_xem").asBoolean())
+                        .ngay_gui(LocalDateTime.parse(item.get("ngay_gui").asText()))
+                        .is_da_doc(item.get("is_da_doc").asBoolean())
+                        .phan_hoi(item.get("phan_hoi").isNull() ? "" : item.get("phan_hoi").asText())
+                        .is_xem_phan_hoi(item.get("is_xem_phan_hoi").asBoolean())
+                        .ngay_xem(item.get("ngay_xem").asText())
+                        .build())
+                .filter(item -> item.getNgay_gui().isAfter(LocalDateTime.now().minusHours(2)))
+                .forEach(item -> {
+                    mailService.sendMail("hoangvuvan677@gmail.com", item.getTieu_de(), item.getNoi_dung());
+                });
+    }
+
+    @Override
+    public String getTokenVnua() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        String body = String.format("""
+                    {
+                        "username": "%s",
+                        "password": "%s",
+                    }
+                """, usernameVnua, passwordVnua);
+        HttpEntity<String> entity = new HttpEntity<>(body, headers);
+        JsonNode jsonNode;
+        try {
+            String response = restTemplate.postForObject(urlLogin, entity, String.class);
+            jsonNode = objectMapper.readTree(response);
+        } catch (Exception ex) {
+            log.error(ex.getMessage(), ex);
+            mailService.sendMail("hoangvuvan677@gmail.com", "Lỗi đăng nhập vnua lấy token", "Lỗi lấy thông tin token: " + ex.getMessage());
+            return null;
+        }
+        if (jsonNode.isEmpty()) {
+            mailService.sendMail("hoangvuvan677@gmail.com", "Lỗi đăng nhập vnua lấy token", "Đăng nhập lỗi");
+            return null;
+        }
+        return jsonNode.get("token").asText();
     }
 }

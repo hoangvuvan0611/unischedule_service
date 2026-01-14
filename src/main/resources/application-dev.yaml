@@ -2,8 +2,8 @@ server:
   port: 8802
 
 
-url:
-  vnua:
+vnua:
+  url:
     home: https://daotao.vnua.edu.vn/#/home
     #Url thoi khoa bieu hoc ky theo tuan
     schedule: https://daotao.vnua.edu.vn/api/sch/w-locdstkbtuanusertheohocky
@@ -25,7 +25,20 @@ url:
     detailTuitionEachSemester: https://daotao.vnua.edu.vn/api/rms/w-locdschitiethocphisvtheohocky
     #Url lay thong tin thong bao moi cua chuong trinh dai hoc
     urlNewsVnua: https://daotao.vnua.edu.vn/api/web/w-locdsbaidangbykyhieu
+    #Url lay thong tin thong bao moi cua chuong trinh dai hoc
+    urlNewsFromAdminVnua: https://daotao.vnua.edu.vn/api/web/w-locdsthongbao
+    #Url login
+    urlLogin: https://daotao.vnua.edu.vn/mobile/api/mobapi/login
+  usernameVnua: 6656485
+  passwordVnua: Hoanglam06112003
 
+logging:
+  level:
+    org:
+      springframework:
+        web:
+          client:
+            RestTemplate: DEBUG
 
 spring:
   data:

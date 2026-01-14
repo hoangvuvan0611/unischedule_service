@@ -5,3 +5,4 @@ mvn clean package -DskipTest
 echo 'Compile complete'
 echo 'Run Service'
 pm2 start ./pm2_ecosystem.config.js
+pm2 logs springboot-unischedule-service

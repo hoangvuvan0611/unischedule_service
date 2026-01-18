@@ -40,6 +40,9 @@ logging:
           client:
             RestTemplate: DEBUG
 
+mail:
+  to: hoangvuvan677@gmail.com
+
 spring:
   data:
     mongodb:

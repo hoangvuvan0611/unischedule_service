@@ -2,9 +2,10 @@ package com.example.unischeduleservice.controller;
 
 import com.example.unischeduleservice.dto.ReviewDTO;
 import com.example.unischeduleservice.dto.base.ResponseData;
+import com.example.unischeduleservice.exceptions.CustomException;
 import com.example.unischeduleservice.service.CustomerService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,12 +20,11 @@ public class CustomerController {
 
     @PostMapping(path = "/sendReview")
     public ResponseData<?> sendReviewUniScheduleApp(@RequestBody ReviewDTO review) {
-        ResponseData<?> response;
         try {
-
-        } catch () {
-
+            customerService.sendReviewUniScheduleApp(review);
+            return ResponseData.success(null);
+        } catch (CustomException ce) {
+            return ResponseData.error(HttpStatus.BAD_REQUEST.value(), ce.getMessage());
         }
-        return response;
     }
 }

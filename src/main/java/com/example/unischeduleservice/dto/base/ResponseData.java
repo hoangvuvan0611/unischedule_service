@@ -17,8 +17,8 @@ public class ResponseData<T> {
     private String message;
     private T Data;
 
-    public static <T> ResponseData<T> success(String message, T data) {
-        return new ResponseData<>(200, message, data);
+    public static <T> ResponseData<T> success(T data) {
+        return new ResponseData<>(200, "success", data);
     }
 
     public static <T> ResponseData<T> error(int status, String message) {

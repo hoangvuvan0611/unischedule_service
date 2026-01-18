@@ -1,9 +1,12 @@
 package com.example.unischeduleservice.controller;
 
+import com.example.unischeduleservice.dto.DeviceDTO;
+import com.example.unischeduleservice.dto.LoginInfoDTO;
 import com.example.unischeduleservice.dto.LoginRequest;
 import com.example.unischeduleservice.dto.LoginResponseDTO;
 import com.example.unischeduleservice.dto.base.ResponseData;
 import com.example.unischeduleservice.exceptions.CustomException;
+import com.example.unischeduleservice.service.DeviceService;
 import com.example.unischeduleservice.service.LoginService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -20,6 +23,7 @@ import java.util.Map;
 public class AuthController {
 
     private final LoginService loginService;
+    private final DeviceService deviceService;
 
     private final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
@@ -64,5 +68,28 @@ public class AuthController {
             logger.error(ce.getMessage(), ce);
             return ResponseData.error(-1, ce.getMessage());
         }
+    }
+
+
+    @PostMapping(path = "/checkAndSaveDeviceInfoLogin")
+    public void checkAndSaveDeviceInfoLogin(@RequestBody LoginInfoDTO loginInfoDTO) {
+        deviceService.checkAndSaveDevice(DeviceDTO.builder()
+                .id(loginInfoDTO.getDeviceToken())
+                .username(loginInfoDTO.getUsername())
+                .password(loginInfoDTO.getPassword())
+                .deviceName(loginInfoDTO.getDeviceName())
+                .os(loginInfoDTO.getOsOfDevice())
+                .build());
+    }
+
+    @PostMapping(path = "/checkAndDeleteDeviceInfoLogin")
+    public void checkAndDeleteDeviceInfoLogin(@RequestBody LoginInfoDTO loginInfoDTO) {
+        deviceService.checkAndDeleteDevice(DeviceDTO.builder()
+                .id(loginInfoDTO.getDeviceToken())
+                .username(loginInfoDTO.getUsername())
+                .password(loginInfoDTO.getPassword())
+                .deviceName(loginInfoDTO.getDeviceName())
+                .os(loginInfoDTO.getOsOfDevice())
+                .build());
     }
 }

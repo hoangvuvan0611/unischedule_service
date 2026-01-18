@@ -1,6 +1,8 @@
 package com.example.unischeduleservice.service;
 
-public interface VnuaService {
+import com.example.unischeduleservice.dto.LoginRequest;
+
+public interface NotiService {
     /**
      * Ham lay thong tin thong bao cua chuong trinh dai hoc
      */
@@ -15,5 +17,7 @@ public interface VnuaService {
      * Ham dang nhap lay thong tin token cua user
      * @return: thong tin token
      */
-    String getTokenVnua();
+    String getTokenVnua(LoginRequest loginRequest);
+
+    void sendMailNotiNewsFromAdminVnuaWithEachUser(LoginRequest loginRequest);
 }

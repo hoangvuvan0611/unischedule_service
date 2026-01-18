@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -57,5 +58,10 @@ public class DeviceServiceImpl implements DeviceService {
             return;
         }
         deviceRepository.deleteById(device.getId());
+    }
+
+    @Override
+    public List<Device> getAll() {
+        return deviceRepository.findAll();
     }
 }

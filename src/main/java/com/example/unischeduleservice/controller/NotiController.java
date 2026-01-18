@@ -1,6 +1,6 @@
 package com.example.unischeduleservice.controller;
 
-import com.example.unischeduleservice.dto.LoginRequest;
+import com.example.unischeduleservice.dto.LoginInfoDTO;
 import com.example.unischeduleservice.service.NotiService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class NotiController {
     private final NotiService notiService;
 
-    @PostMapping(path = "/sendNotiFromAdminVnua")
-    public void sendNotiFromAdminVnua(@RequestBody LoginRequest loginRequest) {
-        notiService.sendMailNotiNewsFromAdminVnuaWithEachUser(loginRequest);
+    @PostMapping(path = "/checkSendNotiFromAdminVnua")
+    public void sendNotiFromAdminVnua(@RequestBody LoginInfoDTO loginInfoDTO) {
+        notiService.sendMailNotiNewsFromAdminVnuaWithEachUser(loginInfoDTO);
     }
 }

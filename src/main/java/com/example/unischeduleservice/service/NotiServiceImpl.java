@@ -1,13 +1,15 @@
 package com.example.unischeduleservice.service;
 
-import com.example.unischeduleservice.dto.ArticleNewsFromAdminVnua;
-import com.example.unischeduleservice.dto.ArticleNewsVnua;
-import com.example.unischeduleservice.dto.LoginRequest;
+import com.example.unischeduleservice.dto.*;
+import com.example.unischeduleservice.models.ArticleNews;
+import com.example.unischeduleservice.models.Device;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.firebase.messaging.FirebaseMessagingException;
 import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
+import org.jsoup.Jsoup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,6 +21,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +46,9 @@ public class NotiServiceImpl implements NotiService {
     private RestTemplate restTemplate = new RestTemplate();
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private final MailService mailService;
+    private final DeviceService deviceService;
+    private final ArticleNewsService articleNewsService;
+    private final FirebaseService firebaseService;
 
     @Override
     @Scheduled(fixedRate = 3600000, initialDelay = 6000)
@@ -86,12 +96,29 @@ public class NotiServiceImpl implements NotiService {
     }
 
     @Override
-//    @Scheduled(fixedRate = 3600000, initialDelay = 6000)
+    @Scheduled(fixedRate = 3600000, initialDelay = 6000)
     public void sendMailNotiNewsFromAdminVnua() {
-        log.info("Sending Vnua News from Amin");
+        List<Device> deviceList = deviceService.getAll();
+        if (deviceList == null || deviceList.isEmpty()) return;
+
+        // Xu ly danh sach thiet bi voi virtual thread
+        try (var executor = Executors.newSingleThreadScheduledExecutor()) {
+            for (Device device : deviceList) {
+                executor.execute(() -> {processGetNotiEachDevice(device);});
+            }
+        }
+    }
+
+    private void processGetNotiEachDevice(Device device) {
+        if (device == null || StringUtils.isEmpty(device.getUsername()) || StringUtils.isEmpty(device.getPassword())) return;
+
+        // Lay thong tin login
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(getTokenVnua(null));
+        headers.setBearerAuth(getTokenVnua(LoginRequest.builder()
+                .username(device.getUsername())
+                .password(device.getPassword())
+                .build()));
         String body = """
                 {"filter":{"id":null,"is_noi_dung":true,"is_web":true},"additional":{"paging":{"limit":10,"page":1},"ordering":[{"name":"ngay_gui","order_type":1}]}}
                 """;
@@ -112,26 +139,57 @@ public class NotiServiceImpl implements NotiService {
         if (items.isEmpty()) {
             return;
         }
+        List<ArticleNews> articleNewsList = new ArrayList<>();
         items.valueStream().map(item ->
-                ArticleNewsFromAdminVnua.builder()
-                        .id(item.get("id").asText())
-                        .doi_tuong_search(item.get("doi_tuong_search").asText())
-                        .doi_tuong(item.get("doi_tuong").asText())
-                        .phan_cap_search(item.get("phan_cap_search").asText())
-                        .phan_cap_sinh_vien(item.get("phan_cap_sinh_vien").asText())
-                        .tieu_de(item.get("tieu_de").asText())
-                        .noi_dung(item.get("noi_dung").asText())
-                        .is_phai_xem(item.get("is_phai_xem").asBoolean())
-                        .ngay_gui(LocalDateTime.parse(item.get("ngay_gui").asText()))
-                        .is_da_doc(item.get("is_da_doc").asBoolean())
-                        .phan_hoi(item.get("phan_hoi").isNull() ? "" : item.get("phan_hoi").asText())
-                        .is_xem_phan_hoi(item.get("is_xem_phan_hoi").asBoolean())
-                        .ngay_xem(item.get("ngay_xem").asText())
-                        .build())
+                        ArticleNewsFromAdminVnua.builder()
+                                .id(item.get("id").asText())
+                                .doi_tuong_search(item.get("doi_tuong_search").asText())
+                                .doi_tuong(item.get("doi_tuong").asText())
+                                .phan_cap_search(item.get("phan_cap_search").asText())
+                                .phan_cap_sinh_vien(item.get("phan_cap_sinh_vien").asText())
+                                .tieu_de(item.get("tieu_de").asText())
+                                .noi_dung(item.get("noi_dung").asText())
+                                .is_phai_xem(item.get("is_phai_xem").asBoolean())
+                                .ngay_gui(LocalDateTime.parse(item.get("ngay_gui").asText()))
+                                .is_da_doc(item.get("is_da_doc").asBoolean())
+                                .phan_hoi(item.get("phan_hoi").isNull() ? "" : item.get("phan_hoi").asText())
+                                .is_xem_phan_hoi(item.get("is_xem_phan_hoi").asBoolean())
+                                .ngay_xem(item.get("ngay_xem").asText())
+                                .build())
                 .filter(item -> item.getNgay_gui().isAfter(LocalDateTime.now().minusHours(2)))
                 .forEach(item -> {
-                    mailService.sendMail("hoangvuvan677@gmail.com", item.getTieu_de(), item.getNoi_dung());
+                    String content = Jsoup.parse(item.getNoi_dung()).text();
+                    ArticleNews articleNews = articleNewsService.getArticleNewsByNotiIdAndDeviceToken(item.getId(), device.getId());
+                    if (articleNews != null) {
+                        return;
+                    } else {
+                        articleNewsList.add(ArticleNews.builder()
+                                        .notiId(item.getId())
+                                        .subject(item.getTieu_de())
+                                        .content(content)
+                                        .isSent(true)
+                                        .createdAt(LocalDateTime.now())
+                                .build());
+                    }
                 });
+        if (articleNewsList.isEmpty()) return;
+        // Luu danh sach thong bao vao db
+        articleNewsService.addNewList(articleNewsList);
+        for (int i = 0; i <= articleNewsList.size(); i++) {
+            try {
+                Map<String, String> data = Map.of("html", "html");
+                firebaseService.sendMessage(NoticeFirebaseDTO.builder()
+                        .subject(articleNewsList.get(i).getSubject())
+                        .content(articleNewsList.get(i).getContent())
+                        .data(data)
+                        .registrationTokens(Collections.singletonList(device.getId()))
+                        .build());
+            } catch (FirebaseMessagingException e) {
+                log.error(e.getLocalizedMessage(), e);
+                // Neu gui loi, thuc hien xoa
+                articleNewsService.removeArticleNewsByNotiIdAndDeviceToken(articleNewsList.get(i).getId(), device.getId());
+            }
+        }
     }
 
     @Override
@@ -168,11 +226,13 @@ public class NotiServiceImpl implements NotiService {
     }
 
     @Override
-    public void sendMailNotiNewsFromAdminVnuaWithEachUser(LoginRequest loginRequest) {
-        log.info("Sending Vnua News from Amin");
+    public void sendMailNotiNewsFromAdminVnuaWithEachUser(LoginInfoDTO loginInfoDTO) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(getTokenVnua(loginRequest));
+        headers.setBearerAuth(getTokenVnua(LoginRequest.builder()
+                .username(loginInfoDTO.getUsername())
+                .password(loginInfoDTO.getPassword())
+                .build()));
         String body = """
                 {"filter":{"id":null,"is_noi_dung":true,"is_web":true},"additional":{"paging":{"limit":10,"page":1},"ordering":[{"name":"ngay_gui","order_type":1}]}}
                 """;

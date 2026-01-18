@@ -1,5 +1,6 @@
 package com.example.unischeduleservice.service;
 
+import com.example.unischeduleservice.dto.LoginInfoDTO;
 import com.example.unischeduleservice.dto.LoginRequest;
 
 public interface NotiService {
@@ -19,5 +20,5 @@ public interface NotiService {
      */
     String getTokenVnua(LoginRequest loginRequest);
 
-    void sendMailNotiNewsFromAdminVnuaWithEachUser(LoginRequest loginRequest);
+    void sendMailNotiNewsFromAdminVnuaWithEachUser(LoginInfoDTO loginInfoDTO);
 }

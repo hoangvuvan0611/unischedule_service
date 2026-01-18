@@ -59,7 +59,7 @@ public class AuthController {
     public ResponseData<?> testLogin(@RequestBody LoginRequest loginRequest) {
         try {
             LoginResponseDTO response = loginService.loginWithAPI(loginRequest.getUsername(), loginRequest.getPassword());
-            return ResponseData.success("success", response);
+            return ResponseData.success(response);
         } catch (CustomException ce) {
             logger.error(ce.getMessage(), ce);
             return ResponseData.error(-1, ce.getMessage());

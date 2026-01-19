@@ -41,6 +41,8 @@ public class NotiServiceImpl implements NotiService {
     private String usernameVnua;
     @Value("${vnua.passwordVnua}")
     private String passwordVnua;
+    @Value("${mail.to}")
+    private String mailTo;
 
     private static final Logger log = LoggerFactory.getLogger(NotiServiceImpl.class);
     private RestTemplate restTemplate = new RestTemplate();
@@ -69,7 +71,7 @@ public class NotiServiceImpl implements NotiService {
              jsonNode = objectMapper.readTree(response);
         } catch (JsonProcessingException jpe) {
             log.error(jpe.getMessage(), jpe);
-            mailService.sendMail("hoangvuvan677@gmail.com", "Thông báo VNUA", "Lỗi lấy thông tin thông báo vnua: " + jpe.getMessage());
+            mailService.sendMail(mailTo, "Thông báo VNUA", "Lỗi lấy thông tin thông báo vnua: " + jpe.getMessage());
             return;
         }
         JsonNode items = jsonNode.path("data").path("ds_bai_viet");
@@ -91,7 +93,7 @@ public class NotiServiceImpl implements NotiService {
                     .build())
                 .filter(item -> item.getIs_news() && item.getNgay_dang_tin().isAfter(LocalDateTime.now().minusHours(2)))
                 .forEach(articleNewsVnua -> {
-                    mailService.sendMail("hoangvuvan677@gmail.com", "Thông báo đào tạo đại học VNUA", articleNewsVnua.getTieu_de());
+                    mailService.sendMail(mailTo, "Thông báo đào tạo đại học VNUA", articleNewsVnua.getTieu_de());
                 });
     }
 
@@ -160,15 +162,13 @@ public class NotiServiceImpl implements NotiService {
                 .forEach(item -> {
                     String content = Jsoup.parse(item.getNoi_dung()).text();
                     ArticleNews articleNews = articleNewsService.getArticleNewsByNotiIdAndDeviceToken(item.getId(), device.getId());
-                    if (articleNews != null) {
-                        return;
-                    } else {
+                    if (articleNews == null) {
                         articleNewsList.add(ArticleNews.builder()
-                                        .notiId(item.getId())
-                                        .subject(item.getTieu_de())
-                                        .content(content)
-                                        .isSent(true)
-                                        .createdAt(LocalDateTime.now())
+                                .notiId(item.getId())
+                                .subject(item.getTieu_de())
+                                .content(content)
+                                .isSent(true)
+                                .createdAt(LocalDateTime.now())
                                 .build());
                     }
                 });

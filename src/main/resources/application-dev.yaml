@@ -50,7 +50,9 @@ mail:
 spring:
   data:
     mongodb:
+      auto-index-creation: true
       uri: mongodb://vuvanhoang:vuvanhoang@localhost:27017/unischedule?authSource=admin
+
   application:
     name: accounts
   mail:

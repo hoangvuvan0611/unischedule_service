@@ -1,5 +1,3 @@
 spring:
   application:
     name: UniScheduleService
-  profiles:
-    active: dev

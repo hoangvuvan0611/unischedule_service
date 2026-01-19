@@ -114,68 +114,16 @@ public class NotiServiceImpl implements NotiService {
     private void processGetNotiEachDevice(Device device) {
         if (device == null || StringUtils.isEmpty(device.getUsername()) || StringUtils.isEmpty(device.getPassword())) return;
 
-        // Lay thong tin login
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(getTokenVnua(LoginRequest.builder()
-                .username(device.getUsername())
-                .password(device.getPassword())
-                .build()));
-        String body = """
-                {"filter":{"id":null,"is_noi_dung":true,"is_web":true},"additional":{"paging":{"limit":10,"page":1},"ordering":[{"name":"ngay_gui","order_type":1}]}}
-                """;
-        HttpEntity<String> entity = new HttpEntity<>(body, headers);
-        JsonNode jsonNode;
-        try {
-            String response = restTemplate.postForObject(urlNewsFromAdminVnua, entity, String.class);
-            if (StringUtils.isEmpty(response)) {
-                throw new RuntimeException();
-            }
-            jsonNode = objectMapper.readTree(response);
-        } catch (Exception ex) {
-            log.error(ex.getMessage(), ex);
-            mailService.sendMail("hoangvuvan677@gmail.com", "Lỗi lấy thông tin thông báo VNUA", "Lỗi lấy thông tin thông báo từ quản trị viên: "  + ex.getMessage());
-            return;
-        }
-        JsonNode items = jsonNode.path("data").path("ds_thong_bao");
-        if (items.isEmpty()) {
-            return;
-        }
-        List<ArticleNews> articleNewsList = new ArrayList<>();
-        items.valueStream().map(item ->
-                        ArticleNewsFromAdminVnua.builder()
-                                .id(item.get("id").asText())
-                                .doi_tuong_search(item.get("doi_tuong_search").asText())
-                                .doi_tuong(item.get("doi_tuong").asText())
-                                .phan_cap_search(item.get("phan_cap_search").asText())
-                                .phan_cap_sinh_vien(item.get("phan_cap_sinh_vien").asText())
-                                .tieu_de(item.get("tieu_de").asText())
-                                .noi_dung(item.get("noi_dung").asText())
-                                .is_phai_xem(item.get("is_phai_xem").asBoolean())
-                                .ngay_gui(LocalDateTime.parse(item.get("ngay_gui").asText()))
-                                .is_da_doc(item.get("is_da_doc").asBoolean())
-                                .phan_hoi(item.get("phan_hoi").isNull() ? "" : item.get("phan_hoi").asText())
-                                .is_xem_phan_hoi(item.get("is_xem_phan_hoi").asBoolean())
-                                .ngay_xem(item.get("ngay_xem").asText())
-                                .build())
-                .filter(item -> item.getNgay_gui().isAfter(LocalDateTime.now().minusHours(2)))
-                .forEach(item -> {
-                    String content = Jsoup.parse(item.getNoi_dung()).text();
-                    ArticleNews articleNews = articleNewsService.getArticleNewsByNotiIdAndDeviceToken(item.getId(), device.getId());
-                    if (articleNews == null) {
-                        articleNewsList.add(ArticleNews.builder()
-                                .notiId(item.getId())
-                                .subject(item.getTieu_de())
-                                .content(content)
-                                .isSent(true)
-                                .createdAt(LocalDateTime.now())
-                                .build());
-                    }
-                });
+        List<ArticleNews> articleNewsList = getArticleNewFromAdmin(device.getUsername(), device.getPassword(), device.getId());
         if (articleNewsList.isEmpty()) return;
         // Luu danh sach thong bao vao db
         articleNewsService.addNewList(articleNewsList);
         for (int i = 0; i <= articleNewsList.size(); i++) {
+            try {
+                Thread.sleep(10000L *i);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
             try {
                 Map<String, String> data = Map.of("html", "html");
                 firebaseService.sendMessage(NoticeFirebaseDTO.builder()
@@ -227,11 +175,37 @@ public class NotiServiceImpl implements NotiService {
 
     @Override
     public void sendMailNotiNewsFromAdminVnuaWithEachUser(LoginInfoDTO loginInfoDTO) {
+        List<ArticleNews> articleNewsList = getArticleNewFromAdmin(loginInfoDTO.getUsername(), loginInfoDTO.getPassword(), loginInfoDTO.getDeviceToken());
+        if (articleNewsList.isEmpty()) return;
+        articleNewsService.addNewList(articleNewsList);
+        for (int i = 0; i <= articleNewsList.size(); i++) {
+            try {
+                Thread.sleep(30000L * i);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            try {
+                Map<String, String> data = Map.of("html", "html");
+                firebaseService.sendMessage(NoticeFirebaseDTO.builder()
+                        .subject(articleNewsList.get(i).getSubject())
+                        .content(articleNewsList.get(i).getContent())
+                        .data(data)
+                        .registrationTokens(Collections.singletonList(loginInfoDTO.getDeviceToken()))
+                        .build());
+            } catch (FirebaseMessagingException e) {
+                log.error(e.getLocalizedMessage(), e);
+                // Neu gui loi, thuc hien xoa
+                articleNewsService.removeArticleNewsByNotiIdAndDeviceToken(articleNewsList.get(i).getId(), loginInfoDTO.getDeviceToken());
+            }
+        }
+    }
+
+    private List<ArticleNews> getArticleNewFromAdmin(String userCode, String password, String deviceToken) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(getTokenVnua(LoginRequest.builder()
-                .username(loginInfoDTO.getUsername())
-                .password(loginInfoDTO.getPassword())
+                .username(userCode)
+                .password(password)
                 .build()));
         String body = """
                 {"filter":{"id":null,"is_noi_dung":true,"is_web":true},"additional":{"paging":{"limit":10,"page":1},"ordering":[{"name":"ngay_gui","order_type":1}]}}
@@ -241,19 +215,20 @@ public class NotiServiceImpl implements NotiService {
         try {
             String response = restTemplate.postForObject(urlNewsFromAdminVnua, entity, String.class);
             if (StringUtils.isEmpty(response)) {
-                throw new RuntimeException();
+                return new ArrayList<>();
             }
             jsonNode = objectMapper.readTree(response);
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
-            mailService.sendMail("hoangvuvan677@gmail.com", "Lỗi lấy thông tin thông báo VNUA", "Lỗi lấy thông tin thông báo từ quản trị viên: "  + ex.getMessage());
-            return;
+            mailService.sendMail(mailTo, "Lỗi lấy thông tin thông báo VNUA", "Lỗi lấy thông tin thông báo từ quản trị viên: "  + ex.getMessage());
+            return new ArrayList<>();
         }
         JsonNode items = jsonNode.path("data").path("ds_thong_bao");
         if (items.isEmpty()) {
-            return;
+            return new ArrayList<>();
         }
-        items.valueStream().map(item ->
+
+        return items.valueStream().map(item ->
                         ArticleNewsFromAdminVnua.builder()
                                 .id(item.get("id").asText())
                                 .doi_tuong_search(item.get("doi_tuong_search").asText())
@@ -270,8 +245,19 @@ public class NotiServiceImpl implements NotiService {
                                 .ngay_xem(item.get("ngay_xem").asText())
                                 .build())
                 .filter(item -> item.getNgay_gui().isAfter(LocalDateTime.now().minusHours(2)))
-                .forEach(item -> {
-                    mailService.sendMail("hoangvuvan677@gmail.com", item.getTieu_de(), item.getNoi_dung());
-                });
+                .map(item -> {
+                    String content = Jsoup.parse(item.getNoi_dung()).text();
+                    ArticleNews articleNews = articleNewsService.getArticleNewsByNotiIdAndDeviceToken(item.getId(), deviceToken);
+                    if (articleNews != null) {
+                       return null;
+                    }
+                    return ArticleNews.builder()
+                            .notiId(item.getId())
+                            .subject(item.getTieu_de())
+                            .content(content)
+                            .isSent(true)
+                            .createdAt(LocalDateTime.now())
+                            .build();
+                }).toList();
     }
 }

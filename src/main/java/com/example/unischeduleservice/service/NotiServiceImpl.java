@@ -26,6 +26,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -118,25 +120,24 @@ public class NotiServiceImpl implements NotiService {
         if (articleNewsList.isEmpty()) return;
         // Luu danh sach thong bao vao db
         articleNewsService.addNewList(articleNewsList);
-        for (int i = 0; i <= articleNewsList.size(); i++) {
-            try {
-                Thread.sleep(10000L *i);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            try {
-                Map<String, String> data = Map.of("html", "html");
-                firebaseService.sendMessage(NoticeFirebaseDTO.builder()
-                        .subject(articleNewsList.get(i).getSubject())
-                        .content(articleNewsList.get(i).getContent())
-                        .data(data)
-                        .registrationTokens(Collections.singletonList(device.getId()))
-                        .build());
-            } catch (FirebaseMessagingException e) {
-                log.error(e.getLocalizedMessage(), e);
-                // Neu gui loi, thuc hien xoa
-                articleNewsService.removeArticleNewsByNotiIdAndDeviceToken(articleNewsList.get(i).getId(), device.getId());
-            }
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1, Thread.ofVirtual().factory());
+        for (int i = 0; i < articleNewsList.size(); i++) {
+            final int index = i;
+            scheduler.schedule(() -> {
+                try {
+                    Map<String, String> data = Map.of("html", "html");
+                    firebaseService.sendMessage(NoticeFirebaseDTO.builder()
+                            .subject(articleNewsList.get(index).getSubject())
+                            .content(articleNewsList.get(index).getContent())
+                            .data(data)
+                            .registrationTokens(Collections.singletonList(device.getId()))
+                            .build());
+                } catch (FirebaseMessagingException e) {
+                    log.error(e.getLocalizedMessage(), e);
+                    // Neu gui loi, thuc hien xoa
+                    articleNewsService.removeArticleNewsByNotiIdAndDeviceToken(articleNewsList.get(index).getId(), device.getId());
+                }
+            }, 10L * i, TimeUnit.SECONDS);
         }
     }
 
@@ -178,25 +179,24 @@ public class NotiServiceImpl implements NotiService {
         List<ArticleNews> articleNewsList = getArticleNewFromAdmin(loginInfoDTO.getUsername(), loginInfoDTO.getPassword(), loginInfoDTO.getDeviceToken());
         if (articleNewsList.isEmpty()) return;
         articleNewsService.addNewList(articleNewsList);
-        for (int i = 0; i <= articleNewsList.size(); i++) {
-            try {
-                Thread.sleep(30000L * i);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            try {
-                Map<String, String> data = Map.of("html", "html");
-                firebaseService.sendMessage(NoticeFirebaseDTO.builder()
-                        .subject(articleNewsList.get(i).getSubject())
-                        .content(articleNewsList.get(i).getContent())
-                        .data(data)
-                        .registrationTokens(Collections.singletonList(loginInfoDTO.getDeviceToken()))
-                        .build());
-            } catch (FirebaseMessagingException e) {
-                log.error(e.getLocalizedMessage(), e);
-                // Neu gui loi, thuc hien xoa
-                articleNewsService.removeArticleNewsByNotiIdAndDeviceToken(articleNewsList.get(i).getId(), loginInfoDTO.getDeviceToken());
-            }
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1, Thread.ofVirtual().factory());
+        for (int i = 0; i < articleNewsList.size(); i++) {
+            final int index = i;
+            scheduler.schedule(() -> {
+                try {
+                    Map<String, String> data = Map.of("html", "html");
+                    firebaseService.sendMessage(NoticeFirebaseDTO.builder()
+                            .subject(articleNewsList.get(index).getSubject())
+                            .content(articleNewsList.get(index).getContent())
+                            .data(data)
+                            .registrationTokens(Collections.singletonList(loginInfoDTO.getDeviceToken()))
+                            .build());
+                } catch (FirebaseMessagingException e) {
+                    log.error(e.getLocalizedMessage(), e);
+                    // Neu gui loi, thuc hien xoa
+                    articleNewsService.removeArticleNewsByNotiIdAndDeviceToken(articleNewsList.get(index).getId(), loginInfoDTO.getDeviceToken());
+                }
+            }, 30L * i, TimeUnit.SECONDS);
         }
     }
 

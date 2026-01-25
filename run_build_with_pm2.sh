@@ -1,3 +1,5 @@
+echo 'Pull code updated'
+git pull origin main
 echo 'Delete service running in PM2'
 pm2 delete springboot-unischedule-service
 echo 'Compile jar file'

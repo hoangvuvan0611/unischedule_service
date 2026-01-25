@@ -70,6 +70,16 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/loginAPIV2")
+    public ResponseEntity<String> loginAPIV2(@RequestBody LoginRequest loginRequest) {
+        try {
+            return loginService.loginWithAPIV2(loginRequest.getUsername(), loginRequest.getPassword());
+        } catch (CustomException ce) {
+            logger.error(ce.getMessage(), ce);
+            return ResponseEntity.badRequest().body(ce.getMessage());
+        }
+    }
+
 
     @PostMapping(path = "/checkAndSaveDeviceInfoLogin")
     public void checkAndSaveDeviceInfoLogin(@RequestBody LoginInfoDTO loginInfoDTO) {

@@ -1,6 +1,7 @@
 package com.example.unischeduleservice.service;
 
 import com.example.unischeduleservice.dto.LoginResponseDTO;
+import com.example.unischeduleservice.dto.base.ResponseData;
 import com.example.unischeduleservice.exceptions.CustomException;
 import com.example.unischeduleservice.models.Account;
 import com.example.unischeduleservice.repository.AccountRepository;
@@ -399,5 +400,32 @@ public class LoginServiceImpl implements LoginService {
             }
         }
         return loginResponseDTO;
+    }
+
+    @Override
+    public ResponseEntity<String> loginWithAPIV2(String username, String password) {
+        RestTemplate rest = new RestTemplate();
+        String url = "https://daotao.vnua.edu.vn/mobile/api/mobapi/login";
+        HttpHeaders headers = new HttpHeaders();
+//        headers.set("user-agent", "Dart/3.7 (dart:io)");
+        headers.set("accept", "application/json");
+//        headers.set("value", "JDzSc1Lx6hZHiBw42npX/uMSO/VuS7oLSouUZz/0");
+//        headers.set("cookie", "apiKey=58VLyaFIJDgSp1l5O1A8r6BCp/aR4cPoUERwiKiw2hUbwZHkFbcypegB178rFbw5wXseLE9QcMmkk9u4G983FGnlyJ4XiHC7B51YTzhsaWWFdatPuJh/XRIcSXZL90Ds");
+//        headers.set("key", "ua");
+//        headers.set("role", "sinhvien");
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String, String> body = new HashMap<>();
+//        body.put("grant_type", "password");
+        body.put("username", username);
+        body.put("password", password);
+
+        HttpEntity<Map<String, String>> request = new HttpEntity<>(body, headers);
+        try {
+            return rest.exchange(url, HttpMethod.POST, request, String.class);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            throw new CustomException("LWA00001", "login.api.error");
+        }
     }
 }

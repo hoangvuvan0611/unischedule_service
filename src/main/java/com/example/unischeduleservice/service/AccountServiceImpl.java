@@ -3,6 +3,7 @@ package com.example.unischeduleservice.service;
 import com.example.unischeduleservice.models.Account;
 import com.example.unischeduleservice.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -34,5 +35,10 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public void saveNewAccount(Account account) {
         accountRepository.save(account);
+    }
+
+    @Override
+    public List<Account> getAccountsByNumRecord(int num) {
+        return accountRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(0, num));
     }
 }

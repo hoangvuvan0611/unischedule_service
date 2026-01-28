@@ -2,6 +2,8 @@ package com.example.unischeduleservice.service;
 
 import com.example.unischeduleservice.models.Account;
 
+import java.util.List;
+
 /**
  * @author vuvanhoang
  * @created 25/10/25 07:35
@@ -11,4 +13,5 @@ public interface AccountService {
     Account getRandom();
     Account findByUsername(String username);
     void saveNewAccount(Account account);
+    List<Account> getAccountsByNumRecord(int num);
 }

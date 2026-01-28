@@ -1,11 +1,11 @@
 package com.example.unischeduleservice.repository;
 
 import com.example.unischeduleservice.models.Account;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.awt.print.Pageable;
 import java.util.List;
 
 /**

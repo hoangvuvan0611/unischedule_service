@@ -93,7 +93,7 @@ public class NotiServiceImpl implements NotiService {
                     .is_news(item.get("is_news").asBoolean())
                     .kieu_hien_thi_ngang(item.get("kieu_hien_thi_ngang").asBoolean())
                     .build())
-                .filter(item -> item.getIs_news() && item.getNgay_dang_tin().isAfter(LocalDateTime.now().minusHours(2)))
+                .filter(item -> item.getNgay_dang_tin().isAfter(LocalDateTime.now().minusHours(2)))
                 .forEach(articleNewsVnua -> {
                     mailService.sendMail(mailTo, "Thông báo đào tạo đại học VNUA", articleNewsVnua.getTieu_de());
                 });
@@ -108,7 +108,7 @@ public class NotiServiceImpl implements NotiService {
         // Xu ly danh sach thiet bi voi virtual thread
         try (var executor = Executors.newSingleThreadScheduledExecutor()) {
             for (Device device : deviceList) {
-                executor.execute(() -> {processGetNotiEachDevice(device);});
+                executor.execute(() -> processGetNotiEachDevice(device));
             }
         }
     }

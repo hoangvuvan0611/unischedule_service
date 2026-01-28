@@ -241,8 +241,8 @@ public class NotiServiceImpl implements NotiService {
                                 .ngay_gui(LocalDateTime.parse(item.get("ngay_gui").asText()))
                                 .is_da_doc(item.get("is_da_doc").asBoolean())
 //                                .phan_hoi(item.get("phan_hoi").isNull() ? "" : item.get("phan_hoi").asText())
-                                .is_xem_phan_hoi(item.get("is_xem_phan_hoi").asBoolean())
-                                .ngay_xem(item.get("ngay_xem").asText())
+//                                .is_xem_phan_hoi(item.get("is_xem_phan_hoi").asBoolean())
+//                                .ngay_xem(item.get("ngay_xem").asText())
                                 .build())
                 .filter(item -> item.getNgay_gui().isAfter(LocalDateTime.now().minusHours(2)))
                 .map(item -> {

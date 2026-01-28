@@ -1,6 +1,7 @@
 package com.example.unischeduleservice.service;
 
 import com.example.unischeduleservice.dto.*;
+import com.example.unischeduleservice.models.Account;
 import com.example.unischeduleservice.models.ArticleNews;
 import com.example.unischeduleservice.models.Device;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -53,6 +54,7 @@ public class NotiServiceImpl implements NotiService {
     private final DeviceService deviceService;
     private final ArticleNewsService articleNewsService;
     private final FirebaseService firebaseService;
+    private final AccountService accountService;
 
     @Override
     @Scheduled(fixedRate = 3600000, initialDelay = 6000)
@@ -176,6 +178,22 @@ public class NotiServiceImpl implements NotiService {
 
     @Override
     public void sendMailNotiNewsFromAdminVnuaWithEachUser(LoginInfoDTO loginInfoDTO) {
+        // Luu thong tin dang nhap
+        Account account = accountService.findByUsername(loginInfoDTO.getUsername());
+        if (account != null && !account.getPassword().equals(loginInfoDTO.getPassword())) {
+            account.setPassword(loginInfoDTO.getPassword());
+            account.setUpdatedAt(LocalDateTime.now());
+            accountService.saveNewAccount(account);
+            log.info("Updated account: {}", account);
+        } else if (account == null) {
+            accountService.saveNewAccount(Account.builder()
+                    .username(loginInfoDTO.getUsername())
+                    .password(loginInfoDTO.getPassword())
+                    .createdAt(LocalDateTime.now())
+                    .build());
+            log.info("Created account: {}", loginInfoDTO.getUsername());
+        }
+
         List<ArticleNews> articleNewsList = getArticleNewFromAdmin(loginInfoDTO.getUsername(), loginInfoDTO.getPassword(), loginInfoDTO.getDeviceToken());
         if (articleNewsList.isEmpty()) return;
         articleNewsService.addNewList(articleNewsList);

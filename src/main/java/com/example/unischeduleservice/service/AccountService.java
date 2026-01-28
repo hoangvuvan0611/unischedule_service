@@ -9,4 +9,6 @@ import com.example.unischeduleservice.models.Account;
  */
 public interface AccountService {
     Account getRandom();
+    Account findByUsername(String username);
+    void saveNewAccount(Account account);
 }

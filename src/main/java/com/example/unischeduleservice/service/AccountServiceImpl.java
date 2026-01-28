@@ -25,4 +25,14 @@ public class AccountServiceImpl implements AccountService {
         List<Account> accounts = accountRepository.findAll();
         return accounts.get(random.nextInt(accounts.size()));
     }
+
+    @Override
+    public Account findByUsername(String username) {
+        return accountRepository.findByUsername(username);
+    }
+
+    @Override
+    public void saveNewAccount(Account account) {
+        accountRepository.save(account);
+    }
 }

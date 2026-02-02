@@ -1,34 +1,15 @@
 package com.example.unischeduleservice.controller;
 
 import com.example.unischeduleservice.dto.base.ResponseData;
-import com.example.unischeduleservice.models.Account;
-import com.example.unischeduleservice.service.AccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
-/**
- * @author vuvanhoang
- * @created 25/10/25 07:35
- * @project unischedule_service
- */
 @RestController
-@RequestMapping(path = "/account")
+@RequestMapping(path = "/report")
 @RequiredArgsConstructor
-public class AccountController {
-    private final AccountService accountService;
-
-    @GetMapping(path = "/random")
-    public Account getRandom() {
-        return accountService.getRandom();
-    }
-
-    @GetMapping(path = "/accounts")
-    public List<Account> getAccounts(@RequestParam(required = false) int num) {
-        return accountService.getAccountsByNumRecord(num);
-    }
+public class ReportController {
 
     @GetMapping(path = "/findAccountByUsernameAndCreatedAt")
     public ResponseData<?> findAccountByUsernameAndCreatedAt(@RequestParam(required = false) String username,
@@ -39,8 +20,8 @@ public class AccountController {
         return null;
     }
 
-    @PostMapping(path = "/fullInfoReportOverview")
-    public ResponseData<?> fullInfoReportOverview() {
-        return new ResponseData<>(200, "Success", accountService.fullInfoReportOverview());
+    @PostMapping
+    public ResponseData<?> findInfoAccountInDay() {
+        return null;
     }
 }

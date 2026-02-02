@@ -1,5 +1,6 @@
 package com.example.unischeduleservice.service;
 
+import com.example.unischeduleservice.dto.FullInfoReportOverviewDTO;
 import com.example.unischeduleservice.models.Account;
 
 import java.util.List;
@@ -14,4 +15,5 @@ public interface AccountService {
     Account findByUsername(String username);
     void saveNewAccount(Account account);
     List<Account> getAccountsByNumRecord(int num);
+    FullInfoReportOverviewDTO fullInfoReportOverview();
 }

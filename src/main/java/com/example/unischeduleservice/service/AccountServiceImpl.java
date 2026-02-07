@@ -70,8 +70,10 @@ public class AccountServiceImpl implements AccountService {
     }
 
     private VisitsDayInfoDTO processGetDataTotalVisitByDay() {
+        List<VisitsInDayDTO> visitsInDayDTOList = accountRepository.countVisitByDay();
         return VisitsDayInfoDTO.builder()
-                .visitsInDays(accountRepository.countVisitByDay())
+                .visitsInDays(visitsInDayDTOList)
+                .total(visitsInDayDTOList.isEmpty() ? 0 : visitsInDayDTOList.getLast().getTotalVisit())
                 .build();
     }
 }

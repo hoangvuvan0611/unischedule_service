@@ -303,6 +303,10 @@ public class LoginServiceImpl implements LoginService {
                         .createdAt(LocalDateTime.now())
                         .build());
                 logger.info("Created account: {}", username);
+            } else {
+                accountRepository.save(Account.builder()
+                        .updatedAt(LocalDateTime.now())
+                        .build());
             }
         }
         return sessionData;

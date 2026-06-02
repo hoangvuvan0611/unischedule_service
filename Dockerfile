@@ -20,15 +20,6 @@ RUN mvn clean package -DskipTests
 FROM amazoncorretto:21-alpine-jdk AS runtime
 WORKDIR /app
 
-# Cài Chromium và thư viện cần thiết (tách thành layer riêng để cache được)
-RUN apk add --no-cache \
-    chromium \
-    nss \
-    freetype \
-    harfbuzz \
-    ttf-freefont \
-    && rm -rf /var/cache/apk/*
-
 # Copy jar từ stage build
 COPY --from=builder /app/target/UniScheduleService-0.0.1-SNAPSHOT.jar app.jar
 

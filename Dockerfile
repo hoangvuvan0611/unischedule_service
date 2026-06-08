@@ -17,11 +17,12 @@ RUN mvn clean package -DskipTests
 # =========================
 # Stage 2: Runtime
 # =========================
-FROM amazoncorretto:21-alpine-jdk AS runtime
+FROM eclipse-temurin:21-jre-alpine AS runtime
 WORKDIR /app
 
 # Copy jar từ stage build
 COPY --from=builder /app/target/UniScheduleService-0.0.1-SNAPSHOT.jar app.jar
+COPY uni-schedule-c9b19-firebase-adminsdk-qdep2-4ae151b4f3.json /uni-schedule-c9b19-firebase-adminsdk-qdep2-4ae151b4f3.json
 
 # Mở port
 EXPOSE 8801

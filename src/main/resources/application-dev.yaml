@@ -1,5 +1,5 @@
 server:
-  port: 8802
+  port: 8801
 
 
 vnua:
@@ -34,7 +34,7 @@ vnua:
 
 path:
   firebase:
-    serviceAccountKey: /Users/vuvanhoang/Documents/key/uni-schedule-c9b19-firebase-adminsdk-qdep2-4ae151b4f3.json
+    serviceAccountKey: /home/vuvanhoang/projects/unischedule_service/uni-schedule-c9b19-firebase-adminsdk-qdep2-4ae151b4f3.json
 
 logging:
   level:

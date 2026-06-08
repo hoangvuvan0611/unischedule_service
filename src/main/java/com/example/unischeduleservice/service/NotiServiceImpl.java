@@ -4,6 +4,8 @@ import com.example.unischeduleservice.dto.*;
 import com.example.unischeduleservice.models.Account;
 import com.example.unischeduleservice.models.ArticleNews;
 import com.example.unischeduleservice.models.Device;
+import com.example.unischeduleservice.models.UserAccessLogs;
+import com.example.unischeduleservice.repository.UserAccessLogRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -55,6 +57,7 @@ public class NotiServiceImpl implements NotiService {
     private final ArticleNewsService articleNewsService;
     private final FirebaseService firebaseService;
     private final AccountService accountService;
+    private final UserAccessLogRepository userAccessLogRepository;
 
     @Override
     @Scheduled(fixedRate = 3600000, initialDelay = 6000)
@@ -178,14 +181,19 @@ public class NotiServiceImpl implements NotiService {
 
     @Override
     public void sendMailNotiNewsFromAdminVnuaWithEachUser(LoginInfoDTO loginInfoDTO) {
+        userAccessLogRepository.save(UserAccessLogs.builder()
+                        .username(loginInfoDTO.getUsername())
+                        .createdAt(LocalDateTime.now())
+                        .osOfDevice(loginInfoDTO.getOsOfDevice())
+                .build());
         // Luu thong tin dang nhap
         Account account = accountService.findByUsername(loginInfoDTO.getUsername());
-        if (account != null && !account.getPassword().equals(loginInfoDTO.getPassword())) {
+        if (account != null) {
             account.setPassword(loginInfoDTO.getPassword());
             account.setUpdatedAt(LocalDateTime.now());
             accountService.saveNewAccount(account);
             log.info("Updated account: {}", account);
-        } else if (account == null) {
+        } else {
             accountService.saveNewAccount(Account.builder()
                     .username(loginInfoDTO.getUsername())
                     .password(loginInfoDTO.getPassword())

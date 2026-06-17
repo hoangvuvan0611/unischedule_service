@@ -34,7 +34,7 @@ vnua:
 
 path:
   firebase:
-    serviceAccountKey: /home/vuvanhoang/projects/unischedule_service/uni-schedule-c9b19-firebase-adminsdk-qdep2-4ae151b4f3.json
+    serviceAccountKey: ./uni-schedule-c9b19-firebase-adminsdk-qdep2-4ae151b4f3.json
 
 logging:
   level:

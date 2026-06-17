@@ -1,15 +1,22 @@
 package com.example.unischeduleservice.service;
 
 import com.example.unischeduleservice.dto.*;
+import com.example.unischeduleservice.dto.base.PageResponseDTO;
 import com.example.unischeduleservice.models.Account;
 import com.example.unischeduleservice.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -21,12 +28,18 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AccountServiceImpl implements AccountService {
 
+    private static final List<String> SORTABLE_FIELDS = List.of("id", "username", "createdAt", "updatedAt");
+
     private final AccountRepository accountRepository;
+    private final MongoTemplate mongoTemplate;
 
     @Override
     public Account getRandom() {
-        Random random = new Random();
         List<Account> accounts = accountRepository.findAll();
+        if (accounts.isEmpty()) {
+            return null;
+        }
+        Random random = new Random();
         return accounts.get(random.nextInt(accounts.size()));
     }
 
@@ -36,13 +49,79 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    public Account findById(String id) {
+        return accountRepository.findById(id).orElse(null);
+    }
+
+    @Override
     public void saveNewAccount(Account account) {
         accountRepository.save(account);
     }
 
     @Override
     public List<Account> getAccountsByNumRecord(int num) {
-        return accountRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(0, num));
+        int limit = Math.max(num, 1);
+        return accountRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(0, limit));
+    }
+
+    @Override
+    public PageResponseDTO<AccountInfoDTO> queryAccounts(
+            String username,
+            LocalDateTime createdFrom,
+            LocalDateTime createdTo,
+            LocalDateTime updatedFrom,
+            LocalDateTime updatedTo,
+            int page,
+            int size,
+            String sortBy,
+            String sortDirection
+    ) {
+        int pageIndex = Math.max(page, 0);
+        int pageSize = Math.max(size, 1);
+        String resolvedSortBy = SORTABLE_FIELDS.contains(sortBy) ? sortBy : "createdAt";
+        Sort.Direction direction = resolveDirection(sortDirection);
+
+        Criteria criteria = buildCriteria(username, createdFrom, createdTo, updatedFrom, updatedTo);
+        Query countQuery = new Query();
+        if (criteria != null) {
+            countQuery.addCriteria(criteria);
+        }
+
+        Query query = new Query();
+        if (criteria != null) {
+            query.addCriteria(criteria);
+        }
+        query.with(PageRequest.of(pageIndex, pageSize, Sort.by(direction, resolvedSortBy)));
+
+        long totalElements = mongoTemplate.count(countQuery, Account.class);
+        List<Account> accounts = mongoTemplate.find(query, Account.class);
+        List<AccountInfoDTO> items = accounts.stream()
+                .map(this::toAccountInfoDTO)
+                .toList();
+
+        int totalPages = pageSize == 0 ? 0 : (int) Math.ceil((double) totalElements / pageSize);
+
+        return PageResponseDTO.<AccountInfoDTO>builder()
+                .items(items)
+                .page(pageIndex)
+                .size(pageSize)
+                .totalElements(totalElements)
+                .totalPages(totalPages)
+                .first(pageIndex == 0)
+                .last(pageIndex >= Math.max(totalPages - 1, 0))
+                .build();
+    }
+
+    @Override
+    public AccountInfoDTO getAccountInfoById(String id) {
+        Account account = findById(id);
+        return account == null ? null : toAccountInfoDTO(account);
+    }
+
+    @Override
+    public AccountInfoDTO getAccountInfoByUsername(String username) {
+        Account account = findByUsername(username);
+        return account == null ? null : toAccountInfoDTO(account);
     }
 
     @Override
@@ -364,5 +443,65 @@ public class AccountServiceImpl implements AccountService {
 
     private String getAccountStatus(AccountReportDTO account) {
         return account.getAccountStatus();
+    }
+
+    private AccountInfoDTO toAccountInfoDTO(Account account) {
+        return AccountInfoDTO.builder()
+                .id(account.getId())
+                .username(account.getUsername())
+                .createdAt(account.getCreatedAt())
+                .updatedAt(account.getUpdatedAt())
+                .build();
+    }
+
+    private Criteria buildCriteria(
+            String username,
+            LocalDateTime createdFrom,
+            LocalDateTime createdTo,
+            LocalDateTime updatedFrom,
+            LocalDateTime updatedTo
+    ) {
+        List<Criteria> criteriaList = new ArrayList<>();
+
+        if (StringUtils.hasText(username)) {
+            criteriaList.add(Criteria.where("username")
+                    .regex(Pattern.compile(Pattern.quote(username.trim()), Pattern.CASE_INSENSITIVE)));
+        }
+        if (createdFrom != null || createdTo != null) {
+            Criteria createdAtCriteria = Criteria.where("createdAt");
+            if (createdFrom != null) {
+                createdAtCriteria = createdAtCriteria.gte(createdFrom);
+            }
+            if (createdTo != null) {
+                createdAtCriteria = createdAtCriteria.lte(createdTo);
+            }
+            criteriaList.add(createdAtCriteria);
+        }
+        if (updatedFrom != null || updatedTo != null) {
+            Criteria updatedAtCriteria = Criteria.where("updatedAt");
+            if (updatedFrom != null) {
+                updatedAtCriteria = updatedAtCriteria.gte(updatedFrom);
+            }
+            if (updatedTo != null) {
+                updatedAtCriteria = updatedAtCriteria.lte(updatedTo);
+            }
+            criteriaList.add(updatedAtCriteria);
+        }
+
+        if (criteriaList.isEmpty()) {
+            return null;
+        }
+        return new Criteria().andOperator(criteriaList.toArray(new Criteria[0]));
+    }
+
+    private Sort.Direction resolveDirection(String sortDirection) {
+        try {
+            if (StringUtils.hasText(sortDirection)) {
+                return Sort.Direction.fromString(sortDirection);
+            }
+        } catch (IllegalArgumentException ignored) {
+            // Fall back to DESC below.
+        }
+        return Sort.Direction.DESC;
     }
 }

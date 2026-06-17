@@ -7,6 +7,7 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.StringUtils;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -14,11 +15,14 @@ import java.io.IOException;
 @Configuration
 public class MyFirebaseConfig {
 
-    @Value("${path.firebase.serviceAccountKey}")
+    @Value("${path.firebase.serviceAccountKey:}")
     private String urlFireBase;
 
     @Bean
     public FirebaseMessaging firebaseConfig() throws IOException {
+        if (!StringUtils.hasText(urlFireBase)) {
+            return null;
+        }
         FileInputStream serviceAccount = new FileInputStream(urlFireBase);
         FirebaseOptions options = new FirebaseOptions.Builder()
                 .setCredentials(GoogleCredentials.fromStream(serviceAccount))

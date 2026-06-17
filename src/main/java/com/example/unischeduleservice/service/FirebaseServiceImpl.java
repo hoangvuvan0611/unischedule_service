@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.ObjectProvider;
 
 import java.util.List;
 
@@ -17,10 +18,15 @@ import java.util.List;
 public class FirebaseServiceImpl implements FirebaseService {
     private static final Logger logger = LoggerFactory.getLogger(FirebaseServiceImpl.class);
 
-    private final FirebaseMessaging firebaseMessaging;
+    private final ObjectProvider<FirebaseMessaging> firebaseMessagingProvider;
 
     @Override
     public void sendMessage(NoticeFirebaseDTO noticeFirebaseDTO) {
+        FirebaseMessaging firebaseMessaging = firebaseMessagingProvider.getIfAvailable();
+        if (firebaseMessaging == null) {
+            logger.warn("FirebaseMessaging bean is not available, skipping push notification");
+            return;
+        }
         String token = noticeFirebaseDTO.getRegistrationTokens().getFirst();
         String subject = noticeFirebaseDTO.getSubject();
         String body = noticeFirebaseDTO.getContent();

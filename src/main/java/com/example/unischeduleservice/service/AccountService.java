@@ -4,8 +4,10 @@ import com.example.unischeduleservice.dto.AccountBatchReportDTO;
 import com.example.unischeduleservice.dto.AccountBatchStatsDTO;
 import com.example.unischeduleservice.dto.AccountBatchStatsSummaryDTO;
 import com.example.unischeduleservice.dto.AccountBatchSummaryDTO;
+import com.example.unischeduleservice.dto.AccountInfoDTO;
 import com.example.unischeduleservice.dto.AccountReportDTO;
 import com.example.unischeduleservice.dto.AccountStatisticsDTO;
+import com.example.unischeduleservice.dto.base.PageResponseDTO;
 import com.example.unischeduleservice.models.Account;
 
 import java.time.LocalDateTime;
@@ -19,8 +21,22 @@ import java.util.List;
 public interface AccountService {
     Account getRandom();
     Account findByUsername(String username);
+    Account findById(String id);
     void saveNewAccount(Account account);
     List<Account> getAccountsByNumRecord(int num);
+    PageResponseDTO<AccountInfoDTO> queryAccounts(
+            String username,
+            LocalDateTime createdFrom,
+            LocalDateTime createdTo,
+            LocalDateTime updatedFrom,
+            LocalDateTime updatedTo,
+            int page,
+            int size,
+            String sortBy,
+            String sortDirection
+    );
+    AccountInfoDTO getAccountInfoById(String id);
+    AccountInfoDTO getAccountInfoByUsername(String username);
     
     // Report methods
     AccountStatisticsDTO getAccountStatistics();

@@ -3,3 +3,28 @@ spring:
     name: UniScheduleService
   profiles:
     active: prod
+
+vnua:
+  url:
+    home: ""
+    schedule: ""
+    tuitionFee: ""
+    userInfo: ""
+    userImg: ""
+    score: ""
+    scheduleTest: ""
+    semesterList: ""
+    allTuitionSemester: ""
+    detailTuitionEachSemester: ""
+    urlNewsVnua: ""
+    urlNewsFromAdminVnua: ""
+    urlLogin: ""
+  usernameVnua: ""
+  passwordVnua: ""
+
+path:
+  firebase:
+    serviceAccountKey: ""
+
+mail:
+  to: ""

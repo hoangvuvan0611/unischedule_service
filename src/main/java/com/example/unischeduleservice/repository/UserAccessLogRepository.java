@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface UserAccessLogRepository extends MongoRepository<UserAccessLogs, String> {
+    UserAccessLogs findFirstByUsernameIgnoreCaseOrderByCreatedAtDesc(String username);
 }

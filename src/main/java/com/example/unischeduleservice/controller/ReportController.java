@@ -6,8 +6,10 @@ import com.example.unischeduleservice.dto.AccountBatchStatsSummaryDTO;
 import com.example.unischeduleservice.dto.AccountBatchSummaryDTO;
 import com.example.unischeduleservice.dto.AccountReportDTO;
 import com.example.unischeduleservice.dto.AccountStatisticsDTO;
+import com.example.unischeduleservice.dto.ReportDashboardDTO;
 import com.example.unischeduleservice.dto.base.ResponseData;
 import com.example.unischeduleservice.service.AccountService;
+import com.example.unischeduleservice.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.data.domain.PageRequest;
@@ -30,6 +32,7 @@ import java.util.List;
 public class ReportController {
     
     private final AccountService accountService;
+    private final ReportService reportService;
 
     @GetMapping("/accounts/statistics")
     public ResponseData<AccountStatisticsDTO> getAccountStatistics() {
@@ -201,5 +204,10 @@ public class ReportController {
         );
         
         return ResponseEntity.ok(summary);
+    }
+
+    @GetMapping("/dashboard")
+    public ResponseData<ReportDashboardDTO> getDashboard() {
+        return ResponseData.success(reportService.getDashboard());
     }
 }
